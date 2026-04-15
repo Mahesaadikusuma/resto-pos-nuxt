@@ -1,6 +1,46 @@
 <script setup lang="ts">
+import type { FormSubmitEvent } from "@nuxt/ui";
 import AuthFooterLink from "../AuthFooterLink.vue";
 import AuthFormHeader from "../AuthFormHeader.vue";
+import * as z from "zod";
+
+const toast = useToast();
+const loading = ref(false);
+const schema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(8, "Must be at least 8 characters"),
+  remember: z.boolean().optional(),
+});
+
+type Schema = z.output<typeof schema>;
+
+const state = reactive<Schema>({
+  email: "",
+  password: "",
+  remember: false,
+});
+
+async function onSubmit(payload: FormSubmitEvent<Schema>) {
+  try {
+    loading.value = true;
+
+    console.log(payload.data);
+    console.log("SUBMIT Login");
+    toast.add({
+      title: "Success",
+      description: "Login berhasil",
+      color: "success",
+    });
+  } catch (e) {
+    toast.add({
+      title: "Error",
+      description: "Login gagal",
+      color: "error",
+    });
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -9,24 +49,29 @@ import AuthFormHeader from "../AuthFormHeader.vue";
     <AuthFormHeader title="Login" subtitle="Sign in to access your dashboard" />
 
     <!-- Form -->
-    <UForm class="w-full mt-4 space-y-4">
-      <UFormField
-        label="Email"
-        name="email"
-        required
-        error="Please enter a valid email address.">
-        <UInput size="lg" placeholder="Email" class="w-full" />
+    <UForm
+      :schema="schema"
+      :state="state"
+      @submit="onSubmit"
+      class="w-full mt-4 space-y-4">
+      <UFormField label="Email" name="email" required>
+        <UInput
+          v-model="state.email"
+          size="lg"
+          placeholder="Email"
+          class="w-full" />
       </UFormField>
 
       <UFormField label="Password" name="password" required>
         <UInput
+          v-model="state.password"
           size="lg"
           type="password"
           placeholder="Password"
           class="w-full" />
       </UFormField>
       <div class="flex items-center justify-between">
-        <UCheckbox label="Remember" />
+        <UCheckbox v-model="state.remember" label="Remember" />
 
         <NuxtLink
           to="/auth/forgot-password"
