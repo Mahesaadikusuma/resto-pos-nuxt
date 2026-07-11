@@ -4,67 +4,18 @@ import AuthFooterLink from "../AuthFooterLink.vue";
 import AuthFormHeader from "../AuthFormHeader.vue";
 import * as z from "zod";
 import { usePassword } from "~/composables/usePassword";
+import { useRegister } from "~/composables/useRegister";
 
-const toast = useToast();
-const loading = ref(false);
-const show = ref(false);
-const schema = z
-  .object({
-    name: z.string().min(2, "Must be at least 2 characters"),
-    email: z.string().email("Invalid email"),
-    password: z.string().min(8, "Must be at least 8 characters"),
-    confirmPassword: z.string().min(8, "Must be at least 8 characters"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+const { Registerschema, Registerstate, loading, handleRegister } =
+  useRegister();
 
-type Schema = z.output<typeof schema>;
-const registerState = reactive<Schema>({
-  name: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-});
+const { visiblePassword, toggleVisiblePassword, strength, score, color, text } =
+  usePassword();
 
-const {
-  showPassword,
-  showConfirmPassword,
-  togglePassword,
-  toggleConfirmPassword,
-  strength,
-  score,
-  color,
-  text,
-} = usePassword();
-
-const passwordStrength = strength(toRef(registerState, "password"));
-const passwordScore = score(toRef(registerState, "password"));
+const passwordStrength = strength(toRef(Registerstate, "password"));
+const passwordScore = score(toRef(Registerstate, "password"));
 const passwordColor = color(passwordScore);
 const passwordText = text(passwordScore);
-
-async function onSubmit(payload: FormSubmitEvent<Schema>) {
-  try {
-    loading.value = true;
-
-    console.log(payload.data);
-    console.log("SUBMIT REGISTER");
-    toast.add({
-      title: "Success",
-      description: "Registration successful",
-      color: "success",
-    });
-  } catch (e) {
-    toast.add({
-      title: "Error",
-      description: "Registration failed",
-      color: "error",
-    });
-  } finally {
-    loading.value = false;
-  }
-}
 </script>
 
 <template>
@@ -75,14 +26,14 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       subtitle="Sign up to access your dashboard" />
 
     <UForm
-      :schema="schema"
-      :state="registerState"
-      @submit="onSubmit"
+      :schema="Registerschema"
+      :state="Registerstate"
+      @submit="handleRegister"
       class="w-full mt-4 space-y-4 mb-5">
       <!-- Name -->
       <UFormField label="Name" name="name" required>
         <UInput
-          v-model="registerState.name"
+          v-model="Registerstate.name"
           size="lg"
           placeholder="Name"
           class="w-full" />
@@ -91,7 +42,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       <!-- Email -->
       <UFormField label="Email" name="email" required>
         <UInput
-          v-model="registerState.email"
+          v-model="Registerstate.email"
           size="lg"
           type="email"
           placeholder="Email"
@@ -101,8 +52,8 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       <!-- Password -->
       <UFormField label="Password" name="password" required>
         <UInput
-          v-model="registerState.password"
-          :type="showPassword ? 'text' : 'password'"
+          v-model="Registerstate.password"
+          :type="visiblePassword.password ? 'text' : 'password'"
           :color="passwordColor"
           :aria-invalid="passwordScore < 4"
           class="w-full">
@@ -112,8 +63,10 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
               color="neutral"
               variant="link"
               size="sm"
-              :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-              @click="togglePassword" />
+              :icon="
+                visiblePassword.password ? 'i-lucide-eye-off' : 'i-lucide-eye'
+              "
+              @click="toggleVisiblePassword('password')" />
           </template>
         </UInput>
       </UFormField>
@@ -121,8 +74,8 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       <!-- Confirm Password -->
       <UFormField label="Confirm Password" name="confirmPassword" required>
         <UInput
-          v-model="registerState.confirmPassword"
-          :type="showConfirmPassword ? 'text' : 'password'"
+          v-model="Registerstate.confirmPassword"
+          :type="visiblePassword.confirmPassword ? 'text' : 'password'"
           class="w-full">
           <template #trailing>
             <UButton
@@ -130,8 +83,12 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
               color="neutral"
               variant="link"
               size="sm"
-              :icon="showConfirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-              @click="toggleConfirmPassword" />
+              :icon="
+                visiblePassword.confirmPassword
+                  ? 'i-lucide-eye-off'
+                  : 'i-lucide-eye'
+              "
+              @click="toggleVisiblePassword('confirmPassword')" />
           </template>
         </UInput>
       </UFormField>
@@ -148,7 +105,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
 
     <!-- Strength -->
     <UProgress
-      v-if="registerState.password"
+      v-if="Registerstate.password"
       :color="passwordColor"
       :indicator="passwordText"
       :model-value="passwordScore"

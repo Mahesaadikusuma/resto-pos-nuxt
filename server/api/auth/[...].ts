@@ -1,5 +1,5 @@
-import { NuxtAuthHandler } from '#auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { NuxtAuthHandler } from '#auth'
 
 interface LoginResponse {
     success: boolean
@@ -39,7 +39,7 @@ export default NuxtAuthHandler({
         maxAge: 60 * 60 * 24,
     },
     providers: [
-        // @ts-expect-error Perlu .default agar berfungsi saat SSR
+        // @ts-expect-error You need to use .default here for it to work during SSR. May be fixed via Vite at some point
         CredentialsProvider.default({
             id: "credentials",
             name: "Credentials",
@@ -55,7 +55,7 @@ export default NuxtAuthHandler({
                     const payload = {
                         email: credentials.email,
                         password: credentials.password,
-                    } 
+                    }
 
                     const userTokens = await $fetch<LoginResponse | null>(`${config.LARAVEL_BASE_URL}/auth/login`, {
                         method: 'POST',
@@ -65,6 +65,7 @@ export default NuxtAuthHandler({
                             'Accept': 'application/json',
                         },
                     })
+                    console.log('LOGIN RESPONSE:', userTokens)
 
                     const accessToken = userTokens?.data?.token
 
@@ -72,7 +73,7 @@ export default NuxtAuthHandler({
                         return null
                     }
 
-                    const me = await $fetch<UserResponse>(`${config.LARAVEL_BASE_URL}/user`, {
+                    const me = await $fetch<UserResponse>(`${config.LARAVEL_BASE_URL}/me`, {
                         method: 'GET',
                         headers: {
                             'Authorization': `Bearer ${accessToken}`,
@@ -80,6 +81,8 @@ export default NuxtAuthHandler({
                             'Accept': 'application/json',
                         },
                     })
+
+                    console.log('ME RESPONSE:', me)
 
                     const user = me?.data
 
@@ -92,10 +95,16 @@ export default NuxtAuthHandler({
                         name: user.name,
                         email: user.email,
                         roles: user.roles,
-                        access_token: accessToken,
+                        accessToken: accessToken,
                     } as any
-                } catch (error) {
-                    console.warn('Error logging in', error)
+                } catch (error: any) {
+                    // console.warn('Error logging in', error)
+                    console.error('AUTHORIZE ERROR:', {
+                        message: error?.message,
+                        status: error?.response?.status ?? error?.statusCode,
+                        data: error?.response?._data ?? error?.data,
+                    })
+
                     return null
                 }
             },
@@ -103,17 +112,27 @@ export default NuxtAuthHandler({
     ],
     callbacks: {
         async jwt({ token, user }) {
+            // if (user) {
+            //     token.accessToken = (user as any).access_token
+            //     token.roles = (user as any).roles
+            // }
+            // console.log('JWT TOKEN:', token)
+            // return token
             if (user) {
-                token.accessToken = (user as any).access_token
-                token.roles = (user as any).roles
+                token.user = user;
             }
-            return token
+            return token;
         },
         async session({ session, token }) {
-            if (session.user) {
-                (session.user as any).accessToken = token.accessToken;
-                (session.user as any).roles = token.roles;
-            }
+            // if (session.user) {
+            //     (session.user as any).accessToken = token.accessToken;
+            //     (session.user as any).roles = token.roles;
+            // }
+            // console.log('SESSION:', session)
+            // return session
+
+            session.user = token.user;
+            session.accessToken = token.user?.accessToken;
             return session
         },
     },

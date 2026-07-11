@@ -1,14 +1,12 @@
 // composables/usePassword.ts
 export function usePassword() {
-  const showPassword = ref(false);
-  const showConfirmPassword = ref(false);
+  const visiblePassword = reactive({
+    password: false,
+    confirmPassword: false,
+  });
 
-  function togglePassword() {
-    showPassword.value = !showPassword.value;
-  }
-
-  function toggleConfirmPassword() {
-    showConfirmPassword.value = !showConfirmPassword.value;
+  function toggleVisiblePassword(key: "password" | "confirmPassword") {
+    visiblePassword[key] = !visiblePassword[key];
   }
 
   function checkStrength(str: string) {
@@ -51,10 +49,8 @@ export function usePassword() {
     });
 
   return {
-    showPassword,
-    showConfirmPassword,
-    togglePassword,
-    toggleConfirmPassword,
+    visiblePassword,
+    toggleVisiblePassword,
     strength,
     score,
     color,

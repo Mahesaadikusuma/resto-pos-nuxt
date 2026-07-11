@@ -53,6 +53,26 @@ const cards: Card[] = [
     iconBg: "bg-[#FEE2E2]",
   },
 ];
+
+const {
+  status,
+  data,
+  lastRefreshedAt,
+  getCsrfToken,
+  getProviders,
+  getSession,
+  signIn,
+  signOut
+} = useAuth()
+
+const token = await getCsrfToken()
+console.log(token)
+console.log('Status:', status.value)   // 'loading' | 'authenticated' | 'unauthenticated'
+console.log('User:', data.value?.user?.name)
+
+const accessToken = data.value?.user?.accessToken
+
+console.log('Sanctum token:', accessToken)
 </script>
 
 <template>
@@ -69,6 +89,11 @@ const cards: Card[] = [
         </p>
       </div>
       <div class="flex items-center gap-2 md:gap-3 ml-auto md:ml-0">
+        <button v-if="status === 'authenticated'" @click="() => signOut({ callbackUrl: '/auth/login' })"
+          class="flex items-center gap-2 px-4 py-2.5 border border-border rounded-button text-foreground font-medium hover:border-primary transition-all duration-200 cursor-pointer">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>LogOut</span>
+        </button>
         <button
           class="flex items-center gap-2 px-4 py-2.5 border border-border rounded-button text-foreground font-medium hover:border-primary transition-all duration-200 cursor-pointer">
           <i data-lucide="download" class="w-4 h-4"></i>

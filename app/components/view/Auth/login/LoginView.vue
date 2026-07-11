@@ -1,46 +1,46 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from "@nuxt/ui";
 import AuthFooterLink from "../AuthFooterLink.vue";
 import AuthFormHeader from "../AuthFormHeader.vue";
-import * as z from "zod";
 
-const toast = useToast();
-const loading = ref(false);
-const schema = z.object({
-  email: z.string().email("Invalid email"),
-  password: z.string().min(8, "Must be at least 8 characters"),
-  remember: z.boolean().optional(),
-});
+// const toast = useToast();
+// const loading = ref(false);
+// const schema = z.object({
+//   email: z.string().email("Invalid email"),
+//   password: z.string().min(8, "Must be at least 8 characters"),
+//   remember: z.boolean().optional(),
+// });
 
-type Schema = z.output<typeof schema>;
+// type Schema = z.output<typeof schema>;
 
-const state = reactive<Schema>({
-  email: "",
-  password: "",
-  remember: false,
-});
+// const state = reactive<Schema>({
+//   email: "",
+//   password: "",
+//   remember: false,
+// });
 
-async function onSubmit(payload: FormSubmitEvent<Schema>) {
-  try {
-    loading.value = true;
+// async function onSubmit(payload: FormSubmitEvent<Schema>) {
+//   try {
+//     loading.value = true;
 
-    console.log(payload.data);
-    console.log("SUBMIT Login");
-    toast.add({
-      title: "Success",
-      description: "Login berhasil",
-      color: "success",
-    });
-  } catch (e) {
-    toast.add({
-      title: "Error",
-      description: "Login gagal",
-      color: "error",
-    });
-  } finally {
-    loading.value = false;
-  }
-}
+//     console.log(payload.data);
+//     console.log("SUBMIT Login");
+//     toast.add({
+//       title: "Success",
+//       description: "Login berhasil",
+//       color: "success",
+//     });
+//   } catch (e) {
+//     toast.add({
+//       title: "Error",
+//       description: "Login gagal",
+//       color: "error",
+//     });
+//   } finally {
+//     loading.value = false;
+//   }
+// }
+
+const { loginSchema, loginState, loading, handleLogin } = useLogin()
 </script>
 
 <template>
@@ -50,13 +50,13 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
 
     <!-- Form -->
     <UForm
-      :schema="schema"
-      :state="state"
-      @submit="onSubmit"
+      :schema="loginSchema"
+      :state="loginState"
+      @submit="handleLogin"
       class="w-full mt-4 space-y-4">
       <UFormField label="Email" name="email" required>
         <UInput
-          v-model="state.email"
+          v-model="loginState.email"
           size="lg"
           placeholder="Email"
           class="w-full" />
@@ -64,14 +64,14 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
 
       <UFormField label="Password" name="password" required>
         <UInput
-          v-model="state.password"
+          v-model="loginState.password"
           size="lg"
           type="password"
           placeholder="Password"
           class="w-full" />
       </UFormField>
       <div class="flex items-center justify-between">
-        <UCheckbox v-model="state.remember" label="Remember" />
+        <!-- <UCheckbox v-model="loginState.remember" label="Remember" /> -->
 
         <NuxtLink
           to="/auth/forgot-password"
@@ -81,6 +81,8 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       </div>
 
       <UButton
+        :loading="loading"
+        :disabled="loading"
         type="submit"
         size="xl"
         class="w-full justify-center rounded-2xl bg-red-500 hover:bg-red-600 text-white">
