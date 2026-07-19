@@ -1,22 +1,30 @@
-import type { DefaultSession } from "next-auth";
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      accessToken?: string
-      roles?: { id: number; name: string; permissions: any[] }[]
-    } & DefaultSession["user"]
-  }
-
-  interface User {
-    access_token?: string
-    roles?: { id: number; name: string; permissions: any[] }[]
-  }
+export interface ILogin {
+  email: string
+  password: string
 }
 
-declare module "next-auth/jwt" {
-  interface JWT {
-    accessToken?: string
-    roles?: { id: number; name: string; permissions: any[] }[]
-  }
+
+export interface ILoginResponse {
+    success: boolean
+    message: string
+    data: {
+        user: {
+            id: number
+            name: string
+            email: string
+        }
+        token: string
+    }
+}
+
+
+export interface IUser {
+    success: boolean
+    message: string
+    data: {
+        id: number
+        name: string
+        email: string
+        roles: Role[]
+    }
 }

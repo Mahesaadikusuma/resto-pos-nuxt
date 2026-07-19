@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { DashboardStartsCard } from "~/components/view/dashboard";
+import { DashboardStatsCard } from '~/components/view/dashboard';
+
 
 definePageMeta({
   layout: "dashboard",
@@ -54,32 +55,148 @@ const cards: Card[] = [
   },
 ];
 
-const {
-  status,
-  data,
-  lastRefreshedAt,
-  getCsrfToken,
-  getProviders,
-  getSession,
-  signIn,
-  signOut
-} = useAuth()
 
-const token = await getCsrfToken()
-console.log(token)
-console.log('Status:', status.value)   // 'loading' | 'authenticated' | 'unauthenticated'
-console.log('User:', data.value?.user?.name)
+defineOptions({
+  tags: ['linecharts', 'singleline']
+})
 
-const accessToken = data.value?.user?.accessToken
+withDefaults(
+  defineProps<{
+    showTitle?: boolean
+  }>(),
+  {
+    showTitle: false
+  }
+)
 
-console.log('Sanctum token:', accessToken)
+const chartData = [
+  { month: 'January', desktop: 186 },
+  { month: 'February', desktop: 305 },
+  { month: 'March', desktop: 237 },
+  { month: 'April', desktop: 260 },
+  { month: 'May', desktop: 209 },
+  { month: 'June', desktop: 250 }
+]
+
+const categories: Record<string, BulletLegendItemInterface> = {
+  desktop: { name: 'Desktop', color: '#22c55e' }
+}
+
+const xFormatter = (tick: number, _i?: number, _ticks?: number[]): string => {
+  return chartData[tick]?.month ?? ''
+}
+
+
+const dataTableOrder = ref([
+  { id: '4600', date: '2024-03-11T15:30:00', status: 'paid', email: 'james.anderson@example.com', amount: 594 },
+  { id: '4599', date: '2024-03-11T10:10:00', status: 'failed', email: 'mia.white@example.com', amount: 276 },
+  { id: '4598', date: '2024-03-11T08:50:00', status: 'refunded', email: 'william.brown@example.com', amount: 315 },
+  { id: '4597', date: '2024-03-10T19:45:00', status: 'paid', email: 'emma.davis@example.com', amount: 529 },
+  { id: '4596', date: '2024-03-10T15:55:00', status: 'paid', email: 'ethan.harris@example.com', amount: 639 },
+  { id: '4595', date: '2024-03-10T14:20:00', status: 'paid', email: 'sophia.martinez@example.com', amount: 150 },
+  { id: '4594', date: '2024-03-10T11:10:00', status: 'failed', email: 'oliver.clark@example.com', amount: 890 },
+  { id: '4593', date: '2024-03-09T09:45:00', status: 'paid', email: 'lucas.lewis@example.com', amount: 210 },
+  { id: '4592', date: '2024-03-09T08:30:00', status: 'refunded', email: 'amelia.walker@example.com', amount: 430 },
+  { id: '4591', date: '2024-03-08T16:00:00', status: 'paid', email: 'henry.hall@example.com', amount: 720 }
+])
+
+// PERBAIKAN 1: pageIndex harus dimulai dari 1
+const pagination = ref({
+  pageIndex: 1, 
+  pageSize: 10
+})
+
+// PERBAIKAN 2: Gunakan dataTableOrder.value, bukan cards
+// (Saya ubah nama fungsinya menjadi paginatedOrders agar lebih sesuai konteks)
+// const paginatedOrders = computed(() => {
+//   const startIndex = (pagination.value.pageIndex - 1) * pagination.value.pageSize
+//   const endIndex = startIndex + pagination.value.pageSize
+//   return dataTableOrder.value.slice(startIndex, endIndex)
+// })
+
+
+// State filter
+const filterOrderId = ref('')
+const filterCustomer = ref('')
+const filterStatus = ref<string | undefined>(undefined)
+const filterSortBy = ref<string | undefined>(undefined)
+
+// PERBAIKAN: filter diterapkan dulu, baru pagination di atas hasil filter
+const filteredOrders = computed(() => {
+  let result = [...dataTableOrder.value]
+
+  // filter by Order ID
+  if (filterOrderId.value.trim()) {
+    const q = filterOrderId.value.trim().toLowerCase()
+    result = result.filter((order) => order.id.toLowerCase().includes(q))
+  }
+
+  // filter by customer (email)
+  if (filterCustomer.value.trim()) {
+    const q = filterCustomer.value.trim().toLowerCase()
+    result = result.filter((order) => order.email.toLowerCase().includes(q))
+  }
+
+  // filter by status
+  if (filterStatus.value) {
+    result = result.filter(
+      (order) => order.status.toLowerCase() === filterStatus.value?.toLowerCase()
+    )
+  }
+
+  // sort
+  if (filterSortBy.value === 'Date') {
+    result = result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  } else if (filterSortBy.value === 'Price') {
+    result = result.sort((a, b) => b.amount - a.amount)
+  } else if (filterSortBy.value === 'Status') {
+    result = result.sort((a, b) => a.status.localeCompare(b.status))
+  }
+
+  return result
+})
+
+// PERBAIKAN: paginatedOrders sekarang ambil dari HASIL FILTER, bukan data mentah
+const paginatedOrders = computed(() => {
+  const startIndex = (pagination.value.pageIndex - 1) * pagination.value.pageSize
+  const endIndex = startIndex + pagination.value.pageSize
+  return filteredOrders.value.slice(startIndex, endIndex)
+})
+
+// PERBAIKAN: reset ke halaman 1 setiap kali filter berubah
+// (kalau tidak, bisa nyangkut di halaman kosong)
+watch([filterOrderId, filterCustomer, filterStatus, filterSortBy], () => {
+  pagination.value.pageIndex = 1
+})
+
+// tombol reset filter
+function resetFilters() {
+  filterOrderId.value = ''
+  filterCustomer.value = ''
+  filterStatus.value = undefined
+  filterSortBy.value = undefined
+}
+
+// const {
+//   status,
+//   data,
+//   getCsrfToken,
+
+// } = useAuth()
+
+// const token = await getCsrfToken()
+// console.log(token)
+// console.log('Status:', status.value)   // 'loading' | 'authenticated' | 'unauthenticated'
+// console.log('User:', data.value?.user?.name)
+
+// const accessToken = data.value?.user?.accessToken
+
+// console.log('Sanctum token:', accessToken)
 </script>
 
 <template>
-  <div class="">
-    <!-- Page Header -->
-    <div
-      class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 md:mb-8">
+  <UContainer>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 md:mb-8">
       <div>
         <h1 class="text-foreground text-2xl md:text-3xl font-bold mb-1">
           Restaurant Management
@@ -88,524 +205,93 @@ console.log('Sanctum token:', accessToken)
           Manage and monitor your restaurant locations
         </p>
       </div>
+
       <div class="flex items-center gap-2 md:gap-3 ml-auto md:ml-0">
-        <button v-if="status === 'authenticated'" @click="() => signOut({ callbackUrl: '/auth/login' })"
-          class="flex items-center gap-2 px-4 py-2.5 border border-border rounded-button text-foreground font-medium hover:border-primary transition-all duration-200 cursor-pointer">
-          <i data-lucide="download" class="w-4 h-4"></i>
-          <span>LogOut</span>
-        </button>
-        <button
-          class="flex items-center gap-2 px-4 py-2.5 border border-border rounded-button text-foreground font-medium hover:border-primary transition-all duration-200 cursor-pointer">
-          <i data-lucide="download" class="w-4 h-4"></i>
-          <span>Export</span>
-        </button>
-        <button
-          class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-button font-medium hover:bg-primary-hover transition-all duration-200 cursor-pointer">
-          <i data-lucide="plus" class="w-4 h-4"></i>
-          <span>Add Restaurant</span>
-        </button>
+        <UButton icon="i-lucide-download" color="neutral" variant="soft">
+          Export Report
+        </UButton>
+        <UButton icon="i-lucide-chart-line" color="primary" variant="soft">
+          View Analytics
+        </UButton>
       </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-      <DashboardStartsCard
-        v-for="card in cards"
-        :key="card.title"
-        :title="card.title"
-        :value="card.value"
-        :icon="card.icon"
-        :trend="card.trend"
-        :icon-bg="card.iconBg" />
+    <UPageGrid class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+      <DashboardStatsCard v-for="card in cards" :key="card.title" :title="card.title" :value="card.value"
+        :icon="card.icon" :trend="card.trend" :icon-bg="card.iconBg" />
+    </UPageGrid>
+
+    <div class="mx-auto md:max-w-6xl dark:bg-gray-800/50 space-y-6 rounded-md mb-5" :class="showTitle ? 'p-6' : ''">
+      <div class="flex items-center justify-between px-5 py-5">
+        <h3 class="text-foreground text-lg font-semibold">
+          Restaurants Growth (2025)
+        </h3>
+        <UButton to="/blocks/line-charts" icon="i-lucide-copy" size="sm" variant="soft" color="neutral"
+          aria-label="Copy chart link" />
+      </div>
+
+      <LineChart :data="chartData" :height="300" x-label="Time" y-label="Temperature" :categories="categories"
+        :y-num-ticks="4" :x-num-ticks="7" :x-formatter="xFormatter" :curve-type="CurveType.Basis"
+        :legend-position="LegendPosition.TopRight" :hide-legend="false" :y-grid-line="true" />
     </div>
 
-    <!-- Growth Chart -->
-    <div class="bg-muted rounded-card pt-5 px-3 pb-3 mb-6">
-      <h3 class="text-foreground text-lg font-bold ml-3 mb-4">
-        Restaurant Growth Over Time
+
+    <div class="bg-muted dark:bg-gray-800/50 rounded-md pt-5 px-3 pb-3 mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-foreground dark:text-gray-100 text-lg font-bold">
+          Filter Orders
+        </h3>
+        <UButton
+          icon="i-lucide-rotate-ccw"
+          size="sm"
+          variant="ghost"
+          color="neutral"
+          @click="resetFilters"
+        >
+          Reset
+        </UButton>
+      </div>
+      <div class="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <UFormField label="Search Order Id">
+          <UInput trailing-icon="i-lucide-search" placeholder="Search By Order ID" class="w-full" />
+        </UFormField>
+        <UFormField label="Search Customer">
+          <UInput trailing-icon="i-lucide-search" placeholder="Search By Customer Name / Email" class="w-full" />
+        </UFormField>
+
+        <UFormField label="Status">
+          <USelectMenu :items="['Pending', 'Shipped', 'Delivered', 'Cancelled']" placeholder="Select status"
+            class="w-full" />
+        </UFormField>
+        <UFormField label="Food Category">
+          <USelectMenu :items="['Appetizer', 'Main Course', 'Dessert', 'Beverage']" placeholder="Select status"
+            class="w-full" />
+        </UFormField>
+        <UFormField label="Sort By">
+          <USelectMenu :items="['Date', 'Price', 'Status']" placeholder="Sort By" class="w-full" />
+        </UFormField>
+      </div>
+    </div>
+
+
+    <div class="bg-muted dark:bg-gray-800/50 rounded-md p-5 mb-6">
+      <h3 class="text-foreground dark:text-gray-100 text-lg font-bold mb-4">
+        All Orders
       </h3>
-      <div class="bg-white rounded-card p-4 md:p-5">
-        <div class="w-full overflow-x-auto">
-          <div class="min-w-70 h-55 sm:h-62 md:h-70">
-            <canvas id="growthChart"></canvas>
-          </div>
-        </div>
+      <div class="">
+        <UTable sticky :data="paginatedOrders" class="flex-1 max-h-[500px]" />
+      </div>
+      
+
+      <div class="flex justify-end border-t border-default pt-4 px-4 mt-4">
+        <UPagination 
+          v-model:page="pagination.pageIndex"
+          :items-per-page="pagination.pageSize" 
+          :total="dataTableOrder.length" 
+          show-edges 
+          :sibling-count="1" 
+        />
       </div>
     </div>
-
-    <!-- Search & Filter Bar -->
-    <div class="bg-muted rounded-card pt-5 px-3 pb-3 mb-6">
-      <div class="bg-white rounded-card p-4">
-        <div class="flex flex-col md:flex-row md:items-center gap-3">
-          <!-- Search Input -->
-          <div class="relative flex-1">
-            <i
-              data-lucide="search"
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
-            <input
-              type="text"
-              id="searchInput"
-              onkeyup="filterTable()"
-              placeholder="Search restaurants..."
-              class="w-full pl-10 pr-4 py-2.5 border border-border rounded-button text-sm focus:outline-none focus:border-primary transition-all duration-200" />
-          </div>
-          <!-- Filter Dropdowns -->
-          <div class="flex flex-wrap items-center gap-2">
-            <select
-              id="statusFilter"
-              onchange="filterTable()"
-              class="px-4 py-2.5 border border-border rounded-button text-sm text-foreground focus:outline-none focus:border-primary transition-all duration-200">
-              <option value="">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Under Construction">Under Construction</option>
-              <option value="Temporarily Closed">Temporarily Closed</option>
-            </select>
-            <select
-              id="cityFilter"
-              onchange="filterTable()"
-              class="px-4 py-2.5 border border-border rounded-button text-sm text-foreground focus:outline-none focus:border-primary transition-all duration-200">
-              <option value="">All Cities</option>
-              <option value="New York">New York</option>
-              <option value="Los Angeles">Los Angeles</option>
-              <option value="Chicago">Chicago</option>
-              <option value="Houston">Houston</option>
-              <option value="Manhattan">Manhattan</option>
-              <option value="Santa Monica">Santa Monica</option>
-              <option value="Austin">Austin</option>
-              <option value="Miami">Miami</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Restaurant Table (Desktop) -->
-    <div class="hidden md:block">
-      <div class="bg-muted rounded-card pt-5 px-3 pb-3">
-        <div
-          class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 px-3">
-          <h3 class="text-foreground text-lg font-bold">
-            Restaurant Locations
-          </h3>
-          <span class="text-gray-500 text-sm"
-            >Showing <span id="tableCount">5</span> of 247 restaurants</span
-          >
-        </div>
-        <div class="bg-white rounded-card overflow-hidden">
-          <table id="dataTable" class="w-full table-fixed">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  class="px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase w-[35%]">
-                  Restaurant
-                </th>
-                <th
-                  class="px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">
-                  Location
-                </th>
-                <th
-                  class="px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
-                  Revenue
-                </th>
-                <th
-                  class="px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
-                  Status
-                </th>
-                <th
-                  class="px-4 py-4 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">
-                  Manager
-                </th>
-                <th
-                  class="px-4 py-4 text-right text-xs font-semibold text-gray-500 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-              <tr
-                class="hover:bg-gray-50"
-                data-restaurant="Downtown Bistro"
-                data-location="Manhattan, NY"
-                data-status="Active"
-                data-manager="Sarah Johnson">
-                <td class="px-4 py-4">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <img
-                      src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=100&h=100&fit=crop"
-                      alt="Downtown Bistro restaurant image"
-                      class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                    <div class="min-w-0 flex-1">
-                      <p class="font-medium text-foreground truncate">
-                        Downtown Bistro
-                      </p>
-                      <p class="text-gray-500 text-sm truncate">EST-2019</p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-4 hidden md:table-cell">
-                  <span class="truncate block">Manhattan, NY</span>
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap">$125K</td>
-                <td class="px-4 py-4">
-                  <span
-                    class="bg-success-light text-success-dark text-xs px-2 py-1 rounded-full whitespace-nowrap"
-                    >Active</span
-                  >
-                </td>
-                <td class="px-4 py-4 hidden lg:table-cell">Sarah Johnson</td>
-                <td class="px-4 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      class="px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-button hover:bg-primary-hover transition-all duration-200 cursor-pointer">
-                      View
-                    </button>
-                    <button
-                      class="px-3 py-1.5 border border-border text-foreground text-xs font-medium rounded-button hover:border-primary hover:text-primary transition-all duration-200 cursor-pointer">
-                      Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr
-                class="hover:bg-gray-50"
-                data-restaurant="Ocean View Grill"
-                data-location="Santa Monica, CA"
-                data-status="Active"
-                data-manager="Mike Chen">
-                <td class="px-4 py-4">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <img
-                      src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&h=100&fit=crop"
-                      alt="Ocean View Grill restaurant image"
-                      class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                    <div class="min-w-0 flex-1">
-                      <p class="font-medium text-foreground truncate">
-                        Ocean View Grill
-                      </p>
-                      <p class="text-gray-500 text-sm truncate">EST-2020</p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-4 hidden md:table-cell">
-                  <span class="truncate block">Santa Monica, CA</span>
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap">$98K</td>
-                <td class="px-4 py-4">
-                  <span
-                    class="bg-success-light text-success-dark text-xs px-2 py-1 rounded-full whitespace-nowrap"
-                    >Active</span
-                  >
-                </td>
-                <td class="px-4 py-4 hidden lg:table-cell">Mike Chen</td>
-                <td class="px-4 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      class="px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-button hover:bg-primary-hover transition-all duration-200 cursor-pointer">
-                      View
-                    </button>
-                    <button
-                      class="px-3 py-1.5 border border-border text-foreground text-xs font-medium rounded-button hover:border-primary hover:text-primary transition-all duration-200 cursor-pointer">
-                      Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr
-                class="hover:bg-gray-50"
-                data-restaurant="Urban Kitchen"
-                data-location="Chicago, IL"
-                data-status="Under Construction"
-                data-manager="Lisa Rodriguez">
-                <td class="px-4 py-4">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <img
-                      src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&h=100&fit=crop"
-                      alt="Urban Kitchen restaurant image"
-                      class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                    <div class="min-w-0 flex-1">
-                      <p class="font-medium text-foreground truncate">
-                        Urban Kitchen
-                      </p>
-                      <p class="text-gray-500 text-sm truncate">EST-2021</p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-4 hidden md:table-cell">
-                  <span class="truncate block">Chicago, IL</span>
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap">$87K</td>
-                <td class="px-4 py-4">
-                  <span
-                    class="bg-warning-light text-warning-dark text-xs px-2 py-1 rounded-full whitespace-nowrap"
-                    >Under Construction</span
-                  >
-                </td>
-                <td class="px-4 py-4 hidden lg:table-cell">Lisa Rodriguez</td>
-                <td class="px-4 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      class="px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-button hover:bg-primary-hover transition-all duration-200 cursor-pointer">
-                      View
-                    </button>
-                    <button
-                      class="px-3 py-1.5 border border-border text-foreground text-xs font-medium rounded-button hover:border-primary hover:text-primary transition-all duration-200 cursor-pointer">
-                      Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr
-                class="hover:bg-gray-50"
-                data-restaurant="Garden Cafe"
-                data-location="Austin, TX"
-                data-status="Active"
-                data-manager="David Park">
-                <td class="px-4 py-4">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <img
-                      src="https://images.unsplash.com/photo-1551218808-94e220e084d2?w=100&h=100&fit=crop"
-                      alt="Garden Cafe restaurant image"
-                      class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                    <div class="min-w-0 flex-1">
-                      <p class="font-medium text-foreground truncate">
-                        Garden Cafe
-                      </p>
-                      <p class="text-gray-500 text-sm truncate">EST-2018</p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-4 hidden md:table-cell">
-                  <span class="truncate block">Austin, TX</span>
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap">$76K</td>
-                <td class="px-4 py-4">
-                  <span
-                    class="bg-success-light text-success-dark text-xs px-2 py-1 rounded-full whitespace-nowrap"
-                    >Active</span
-                  >
-                </td>
-                <td class="px-4 py-4 hidden lg:table-cell">David Park</td>
-                <td class="px-4 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      class="px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-button hover:bg-primary-hover transition-all duration-200 cursor-pointer">
-                      View
-                    </button>
-                    <button
-                      class="px-3 py-1.5 border border-border text-foreground text-xs font-medium rounded-button hover:border-primary hover:text-primary transition-all duration-200 cursor-pointer">
-                      Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr
-                class="hover:bg-gray-50"
-                data-restaurant="Metro Diner"
-                data-location="Miami, FL"
-                data-status="Temporarily Closed"
-                data-manager="Maria Garcia">
-                <td class="px-4 py-4">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <img
-                      src="https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=100&h=100&fit=crop"
-                      alt="Metro Diner restaurant image"
-                      class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                    <div class="min-w-0 flex-1">
-                      <p class="font-medium text-foreground truncate">
-                        Metro Diner
-                      </p>
-                      <p class="text-gray-500 text-sm truncate">EST-2017</p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-4 hidden md:table-cell">
-                  <span class="truncate block">Miami, FL</span>
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap">$45K</td>
-                <td class="px-4 py-4">
-                  <span
-                    class="bg-error-light text-error-dark text-xs px-2 py-1 rounded-full whitespace-nowrap"
-                    >Temporarily Closed</span
-                  >
-                </td>
-                <td class="px-4 py-4 hidden lg:table-cell">Maria Garcia</td>
-                <td class="px-4 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      class="px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-button hover:bg-primary-hover transition-all duration-200 cursor-pointer">
-                      View
-                    </button>
-                    <button
-                      class="px-3 py-1.5 border border-border text-foreground text-xs font-medium rounded-button hover:border-primary hover:text-primary transition-all duration-200 cursor-pointer">
-                      Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mobile Cards -->
-    <div id="mobileCards" class="md:hidden space-y-3">
-      <div
-        class="bg-white rounded-2xl p-4 border border-gray-100"
-        data-restaurant="Downtown Bistro"
-        data-location="Manhattan, NY"
-        data-status="Active"
-        data-manager="Sarah Johnson">
-        <div class="flex items-center gap-3 mb-3 min-w-0">
-          <img
-            src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=100&h=100&fit=crop"
-            alt="Downtown Bistro restaurant image"
-            class="w-12 h-12 rounded-button object-cover flex-shrink-0" />
-          <div class="flex-1 min-w-0">
-            <h4 class="text-foreground font-semibold truncate">
-              Downtown Bistro
-            </h4>
-            <p class="text-gray-500 text-xs truncate">
-              Manhattan, NY • Sarah Johnson
-            </p>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <p class="text-foreground font-semibold">$125K</p>
-            <span
-              class="bg-success-light text-success-dark text-xs px-2 py-1 rounded-full whitespace-nowrap"
-              >Active</span
-            >
-          </div>
-        </div>
-        <div class="flex gap-2 pt-3 border-t border-gray-100">
-          <a href="#" class="flex-1 cursor-pointer">
-            <div
-              class="text-center py-2 text-sm font-medium text-primary bg-red-50 rounded-lg">
-              View
-            </div>
-          </a>
-          <a href="#" class="flex-1 cursor-pointer">
-            <div
-              class="text-center py-2 text-sm font-medium text-foreground bg-gray-50 rounded-lg">
-              Edit
-            </div>
-          </a>
-        </div>
-      </div>
-
-      <div
-        class="bg-white rounded-2xl p-4 border border-gray-100"
-        data-restaurant="Ocean View Grill"
-        data-location="Santa Monica, CA"
-        data-status="Active"
-        data-manager="Mike Chen">
-        <div class="flex items-center gap-3 mb-3 min-w-0">
-          <img
-            src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&h=100&fit=crop"
-            alt="Ocean View Grill restaurant image"
-            class="w-12 h-12 rounded-button object-cover flex-shrink-0" />
-          <div class="flex-1 min-w-0">
-            <h4 class="text-foreground font-semibold truncate">
-              Ocean View Grill
-            </h4>
-            <p class="text-gray-500 text-xs truncate">
-              Santa Monica, CA • Mike Chen
-            </p>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <p class="text-foreground font-semibold">$98K</p>
-            <span
-              class="bg-success-light text-success-dark text-xs px-2 py-1 rounded-full whitespace-nowrap"
-              >Active</span
-            >
-          </div>
-        </div>
-        <div class="flex gap-2 pt-3 border-t border-gray-100">
-          <a href="#" class="flex-1 cursor-pointer">
-            <div
-              class="text-center py-2 text-sm font-medium text-primary bg-red-50 rounded-lg">
-              View
-            </div>
-          </a>
-          <a href="#" class="flex-1 cursor-pointer">
-            <div
-              class="text-center py-2 text-sm font-medium text-foreground bg-gray-50 rounded-lg">
-              Edit
-            </div>
-          </a>
-        </div>
-      </div>
-
-      <div
-        class="bg-white rounded-2xl p-4 border border-gray-100"
-        data-restaurant="Urban Kitchen"
-        data-location="Chicago, IL"
-        data-status="Under Construction"
-        data-manager="Lisa Rodriguez">
-        <div class="flex items-center gap-3 mb-3 min-w-0">
-          <img
-            src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&h=100&fit=crop"
-            alt="Urban Kitchen restaurant image"
-            class="w-12 h-12 rounded-button object-cover flex-shrink-0" />
-          <div class="flex-1 min-w-0">
-            <h4 class="text-foreground font-semibold truncate">
-              Urban Kitchen
-            </h4>
-            <p class="text-gray-500 text-xs truncate">
-              Chicago, IL • Lisa Rodriguez
-            </p>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <p class="text-foreground font-semibold">$87K</p>
-            <span
-              class="bg-warning-light text-warning-dark text-xs px-2 py-1 rounded-full whitespace-nowrap"
-              >Under Construction</span
-            >
-          </div>
-        </div>
-        <div class="flex gap-2 pt-3 border-t border-gray-100">
-          <a href="#" class="flex-1 cursor-pointer">
-            <div
-              class="text-center py-2 text-sm font-medium text-primary bg-red-50 rounded-lg">
-              View
-            </div>
-          </a>
-          <a href="#" class="flex-1 cursor-pointer">
-            <div
-              class="text-center py-2 text-sm font-medium text-foreground bg-gray-50 rounded-lg">
-              Edit
-            </div>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pagination -->
-    <div
-      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 px-3 pb-4">
-      <div class="text-sm text-gray-600">Showing 1 to 5 of 247 entries</div>
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          class="px-3 py-2 border border-border rounded-lg text-sm cursor-pointer transition-all duration-200 hover:border-primary">
-          Previous
-        </button>
-        <button class="px-3 py-2 bg-primary text-white rounded-lg text-sm">
-          1
-        </button>
-        <button
-          class="px-3 py-2 border border-border rounded-lg text-sm cursor-pointer transition-all duration-200 hover:border-primary">
-          2
-        </button>
-        <button
-          class="px-3 py-2 border border-border rounded-lg text-sm cursor-pointer transition-all duration-200 hover:border-primary">
-          3
-        </button>
-        <button
-          class="px-3 py-2 border border-border rounded-lg text-sm cursor-pointer transition-all duration-200 hover:border-primary">
-          Next
-        </button>
-      </div>
-    </div>
-  </div>
+  </UContainer>
 </template>

@@ -1,3 +1,3 @@
-import DashboardStartsCard from "./Stats/card.vue";
+import DashboardStatsCard from "./Stats/card.vue";
 
-export { DashboardStartsCard };
+export { DashboardStatsCard };

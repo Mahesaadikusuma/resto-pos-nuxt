@@ -1,18 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { NuxtAuthHandler } from '#auth'
-
-interface LoginResponse {
-    success: boolean
-    message: string
-    data: {
-        user: {
-            id: number
-            name: string
-            email: string
-        }
-        token: string
-    }
-}
+import { authService } from '~/services/auth.service'
 
 interface Role {
     id: number
@@ -49,7 +37,7 @@ export default NuxtAuthHandler({
             },
             async authorize(credentials: any) {
                 try {
-                    const config = useRuntimeConfig()
+                    // const config = useRuntimeConfig()
                     if (!credentials?.email || !credentials?.password) return null
 
                     const payload = {
@@ -57,38 +45,34 @@ export default NuxtAuthHandler({
                         password: credentials.password,
                     }
 
-                    const userTokens = await $fetch<LoginResponse | null>(`${config.LARAVEL_BASE_URL}/auth/login`, {
-                        method: 'POST',
-                        body: payload,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                        },
-                    })
-                    console.log('LOGIN RESPONSE:', userTokens)
-
+                    // const userTokens = await $fetch<LoginResponse | null>(`${config.LARAVEL_BASE_URL}/auth/login`, {
+                    //     method: 'POST',
+                    //     body: payload,
+                    //     headers: {
+                    //         'Content-Type': 'application/json',
+                    //         'Accept': 'application/json',
+                    //     },
+                    // })
+                    // console.log('LOGIN RESPONSE:', userTokens)
+                    const userTokens = await authService.login(payload)
                     const accessToken = userTokens?.data?.token
 
-                    if (!accessToken) {
-                        return null
-                    }
+                    if (!accessToken) return null
 
-                    const me = await $fetch<UserResponse>(`${config.LARAVEL_BASE_URL}/me`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                        },
-                    })
+                    // const me = await $fetch<UserResponse>(`${config.LARAVEL_BASE_URL}/me`, {
+                    //     method: 'GET',
+                    //     headers: {
+                    //         'Authorization': `Bearer ${accessToken}`,
+                    //         'Content-Type': 'application/json',
+                    //         'Accept': 'application/json',
+                    //     },
+                    // })
 
-                    console.log('ME RESPONSE:', me)
-
+                    // console.log('ME RESPONSE:', me)
+                    const me = await authService.getProfile(accessToken)
                     const user = me?.data
 
-                    if (!user) {
-                        return null
-                    }
+                    if (!user) return null
 
                     return {
                         id: user.id,

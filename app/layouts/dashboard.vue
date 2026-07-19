@@ -1,27 +1,52 @@
 <script setup lang="ts">
-import DashboardMobileHeader from "~/components/view/dashboard/header/DashboardMobileHeader.vue";
-import Sidebar from "~/components/view/dashboard/Sidebar/Sidebar.vue";
+const open = ref(true)
+// composable sidebar
+const { getSidebarMenu, userItems, authData } = useNavigation()
 
-const { isOpen, toggleSidebar, close } = useDashboardSidebar();
+
+const user = ref({
+  name: authData.value?.user?.name ?? 'Benjamin Canac',
+  // avatar: {
+  //   src: 'https://github.com/benjamincanac.png',
+  //   alt: 'Benjamin Canac'
+  // }
+})
+
+
 </script>
 
 <template>
-  <div class="font-sans bg-white min-h-screen overflow-x-hidden">
-    <!-- OVERLAY -->
-    <div
-      class="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
-      :class="isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'"
-      @click="close" />
+  <div class="flex flex-1">
+    <USidebar v-model:open="open" title="Dashboard" description="Admin Dashboard" collapsible="icon" rail :ui="{
+      container: 'h-full',
+      inner: 'bg-elevated/25 divide-transparent',
+      body: 'py-0'
+    }">
+      <template #default="{ state }">
+        <UNavigationMenu :key="state"  :items="getSidebarMenu(state)" orientation="vertical"
+          :ui="{ link: 'p-1.5 overflow-hidden' }" />
+      </template>
 
-    <div class="min-h-screen flex">
-      <Sidebar />
+      <template #footer>
+        <UDropdownMenu :items="userItems" :content="{ align: 'center', collisionPadding: 12 }"
+          :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width) min-w-48' }">
+          <UButton v-bind="user" :label="user?.name" trailing-icon="i-lucide-chevrons-up-down" color="neutral"
+            variant="ghost" square class="w-full data-[state=open]:bg-elevated overflow-hidden" :ui="{
+              trailingIcon: 'text-dimmed ms-auto'
+            }" />
+        </UDropdownMenu>
+      </template>
+    </USidebar>
 
-      <main class="flex-1 lg:ml-72 p-4 md:p-5 bg-white">
-        <!-- Mobile Header -->
-        <DashboardMobileHeader title="FoodHub" @toggle="toggleSidebar" />
+    <div class="flex-1 flex flex-col">
+      <div class="h-(--ui-header-height) shrink-0 flex items-center  px-4 border-b border-default">
+        <UButton icon="i-lucide-panel-left" class="cursor-pointer" color="neutral" variant="ghost" aria-label="Toggle sidebar"
+          @click="() => {open = !open}" />
+      </div>
 
+      <div class="mb-52">
         <slot />
-      </main>
+      </div>
     </div>
   </div>
 </template>
