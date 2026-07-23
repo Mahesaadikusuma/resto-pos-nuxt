@@ -10,33 +10,54 @@ useHead({
 });
 
 const config = useRuntimeConfig()
+const toast = useToast()
 
-const { data: categories, pending } = await useFetch<ICategoryResponse>(`${config.public.laravelBaseUrl}/category`, {
-  headers: {
-    'Accept': 'application/json',
+// Hapus `await` agar tidak blocking SSR — gunakan `pending` untuk loading state
+// useFetch
+const { data: categories, pending, status, error } = useLazyFetch<ICategoryResponse>(
+  `${config.public.laravelBaseUrl}/category`,
+  {
+    headers: {
+      'Accept': 'application/json',
+    },
+    // Pastikan selalu re-fetch saat mount (hindari cache stale)
+    watch: false,
+  }
+)
+
+// ❌ SALAH: if (error) — error adalah Ref, selalu truthy meski tidak ada error
+// ✅ BENAR: watch(error) — reaktif, hanya jalan saat error.value berubah jadi ada isinya
+watch(error, (newError) => {
+  if (newError) {
+    toast.add({
+      title: 'Gagal memuat data',
+      description: newError.data?.message || newError.message || 'Gagal memuat data kategori, coba lagi.',
+      color: 'error',
+      icon: 'i-lucide-circle-x',
+    })
   }
 })
 
-// PERBAIKAN 1: Gunakan computed agar reaktif terhadap data dari useFetch
+// Data utama dari API
 const dataTableOrder = computed<ICategory[]>(() => {
-    return categories.value?.data || []
+  return categories.value?.data ?? []
 })
 
 const columns: TableColumn<ICategory>[] = [
   {
     accessorKey: 'uuid',
     header: 'No',
-    cell: ({ row }) => row.index + 1
+    cell: ({ row }) => row.index + 1,
   },
   {
     accessorKey: 'name',
-    header: 'Name'
+    header: 'Name',
   },
   {
     accessorKey: 'uuid',
     header: 'Action',
-    id: 'action'
-  }
+    id: 'action',
+  },
 ]
 
 function getDropdownActions(category: ICategory): DropdownMenuItem[][] {
@@ -45,54 +66,84 @@ function getDropdownActions(category: ICategory): DropdownMenuItem[][] {
       {
         label: 'Edit',
         icon: 'i-lucide-edit',
-        to: `/dashboard/admin/management/category/edit/${category.uuid}`
+        to: `/dashboard/admin/management/category/edit/${category.uuid}`,
       },
       {
         label: 'Delete',
         icon: 'i-lucide-trash',
-        color: 'error'
-      }
-    ]
+        color: 'error',
+      },
+    ],
   ]
 }
 
+// ─── Pagination ─────────
 const pagination = ref({
-  pageIndex: 1, 
-  pageSize: 10
+  pageIndex: 1,
+  pageSize: 10,
 })
 
-// State filter yang disesuaikan
-const filterSearchCategory = ref('')
+// ─── Filter State ───────
+// Input langsung dari user (belum di-debounce)
+const filterSearchInput = ref('')
 const filterSortBy = ref<string | undefined>(undefined)
 
-// PERBAIKAN 2: Saring data berdasarkan nama kategori
-const filteredOrders = computed(() => {
+// ─── Debounce ───────────
+// Debounced search value — hanya diupdate 400ms setelah user berhenti mengetik
+const filterSearchCategory = ref('')
+
+// ✅ Cara baru: pakai watchDebounced dari VueUse — lebih ringkas, otomatis cleanup
+watchDebounced(
+  filterSearchInput,
+  (val) => {
+    filterSearchCategory.value = val
+  },
+  { debounce: 400 }
+)
+
+// ❌ Cara lama: manual debounce pakai setTimeout (tetap valid, tapi lebih verbose)
+// let debounceTimer: ReturnType<typeof setTimeout> | null = null
+// watch(filterSearchInput, (val) => {
+//   if (debounceTimer) clearTimeout(debounceTimer)
+//   debounceTimer = setTimeout(() => {
+//     filterSearchCategory.value = val
+//   }, 400)
+// })
+
+// ─── Filtering + Sorting 
+const filteredCategories = computed(() => {
   let result = [...dataTableOrder.value]
 
-  if (filterSearchCategory.value.trim()) {
-    const q = filterSearchCategory.value.trim().toLowerCase()
-    result = result.filter((cat) => cat.name.toLowerCase().includes(q))
+  // Filter berdasarkan nama
+  const querySearch = filterSearchCategory.value.trim().toLowerCase()
+  if (querySearch) {
+    result = result.filter((cat) => cat.name.toLowerCase().includes(querySearch))
   }
 
-  // Contoh sederhana sorting
-  if (filterSortBy.value === 'Name') {
-    result.sort((a, b) => a.name.localeCompare(b.name))
+  // Sorting
+  if (filterSortBy.value === 'Name A-Z') {
+    result.sort((currentCat, nextCat) => currentCat.name.localeCompare(nextCat.name))
+  } else if (filterSortBy.value === 'Name Z-A') {
+    result.sort((currentCat, nextCat) => nextCat.name.localeCompare(currentCat.name))
   }
 
   return result
 })
 
-const paginatedOrders = computed(() => {
-  const startIndex = (pagination.value.pageIndex - 1) * pagination.value.pageSize
-  const endIndex = startIndex + pagination.value.pageSize
-  return filteredOrders.value.slice(startIndex, endIndex)
+// ─── Pagination dari data terfilter ──────────────────────────────────────────
+const paginatedCategories = computed(() => {
+  const start = (pagination.value.pageIndex - 1) * pagination.value.pageSize
+  const end = start + pagination.value.pageSize
+  return filteredCategories.value.slice(start, end)
 })
 
+// Reset ke halaman 1 saat filter berubah
 watch([filterSearchCategory, filterSortBy], () => {
   pagination.value.pageIndex = 1
 })
 
 function resetFilters() {
+  filterSearchInput.value = ''
   filterSearchCategory.value = ''
   filterSortBy.value = undefined
 }
@@ -123,13 +174,12 @@ function resetFilters() {
                 </UButton>
             </div>
             <div class="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                <!-- PERBAIKAN 3: Hubungkan v-model ke state filterSearchCategory -->
+                <!-- filterSearchInput: nilai langsung dari user, debounced ke filterSearchCategory -->
                 <UFormField label="Search Category">
-                    <UInput v-model="filterSearchCategory" trailing-icon="i-lucide-search" placeholder="Search By Category" class="w-full" />
+                    <UInput v-model="filterSearchInput" trailing-icon="i-lucide-search" placeholder="Search By Category" class="w-full" />
                 </UFormField>
-                <!-- PERBAIKAN 4: Hubungkan v-model ke state filterSortBy -->
                 <UFormField label="Sort By">
-                    <USelectMenu v-model="filterSortBy" :items="['Name']" placeholder="Sort By" class="w-full" />
+                    <USelectMenu v-model="filterSortBy" :items="['Name A-Z', 'Name Z-A']" placeholder="Sort By" class="w-full" />
                 </UFormField>
             </div>
         </div>
@@ -145,7 +195,8 @@ function resetFilters() {
                 <UTable 
                     v-else
                     sticky 
-                    :data="paginatedOrders" 
+                    :loading="status === 'pending' || status === 'idle'"
+                    :data="paginatedCategories" 
                     :columns="columns"
                     class="flex-1 max-h-[500px]" >
 
@@ -159,19 +210,25 @@ function resetFilters() {
                             />
                         </UDropdownMenu>
                     </template>
+
+                    <template #empty>
+                        <div class="flex items-center justify-center py-12">
+                          <p class="text-gray-500">Data is empty</p>
+                        </div>
+                    </template>
                 </UTable>
             </div>
 
-            <div v-if="filteredOrders.length === 0 && !pending" class="text-center py-6 text-gray-500">
+            <!-- <div v-if="filteredCategories.length === 0 && !pending" class="text-center py-6 text-gray-500">
                 No categories found.
-            </div>
+            </div> -->
 
-            <!-- PERBAIKAN 5: Ubah :total menggunakan filteredOrders.length -->
             <div class="flex justify-end border-t border-default pt-4 px-4 mt-4">
                 <UPagination 
+                    v-if="status === 'success'"
                     v-model:page="pagination.pageIndex" 
                     :items-per-page="pagination.pageSize"
-                    :total="filteredOrders.length" 
+                    :total="filteredCategories.length" 
                     show-edges 
                     :sibling-count="1" 
                 />

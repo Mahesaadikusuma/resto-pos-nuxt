@@ -7,7 +7,7 @@ export const authService = {
     // Memanggil config di dalam fungsi agar terhindar dari error 'context unavailable'
     const config = useRuntimeConfig()
     
-    return await $fetch<ILoginResponse>(`${config.LARAVEL_BASE_URL}/auth/login`, {
+    return await $fetch<ILoginResponse>(`${config.public.laravelBaseUrl}/auth/login`, {
       method: 'POST',
       body: payload,
       headers: {
@@ -20,7 +20,7 @@ export const authService = {
   async getProfile(accessToken: string) {
     const config = useRuntimeConfig()
     
-    return await $fetch<IUser>(`${config.LARAVEL_BASE_URL}/me`, {
+    return await $fetch<IUser>(`${config.public.laravelBaseUrl}/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

@@ -2,45 +2,7 @@
 import AuthFooterLink from "../AuthFooterLink.vue";
 import AuthFormHeader from "../AuthFormHeader.vue";
 
-// const toast = useToast();
-// const loading = ref(false);
-// const schema = z.object({
-//   email: z.string().email("Invalid email"),
-//   password: z.string().min(8, "Must be at least 8 characters"),
-//   remember: z.boolean().optional(),
-// });
-
-// type Schema = z.output<typeof schema>;
-
-// const state = reactive<Schema>({
-//   email: "",
-//   password: "",
-//   remember: false,
-// });
-
-// async function onSubmit(payload: FormSubmitEvent<Schema>) {
-//   try {
-//     loading.value = true;
-
-//     console.log(payload.data);
-//     console.log("SUBMIT Login");
-//     toast.add({
-//       title: "Success",
-//       description: "Login berhasil",
-//       color: "success",
-//     });
-//   } catch (e) {
-//     toast.add({
-//       title: "Error",
-//       description: "Login gagal",
-//       color: "error",
-//     });
-//   } finally {
-//     loading.value = false;
-//   }
-// }
-
-const { loginSchema, loginState, loading, handleLogin } = useLogin()
+const { loginSchema, loginState, loading, handleLogin, serverError, formErrors } = useLogin()
 </script>
 
 <template>
@@ -48,13 +10,24 @@ const { loginSchema, loginState, loading, handleLogin } = useLogin()
     class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-8">
     <AuthFormHeader title="Login" subtitle="Sign in to access your dashboard" />
 
+    <!-- Error umum dari server (muncul setelah submit gagal) -->
+    <UAlert
+      v-if="serverError"
+      color="error"
+      variant="soft"
+      icon="i-lucide-circle-x"
+      :description="serverError"
+      class="mt-4"
+    />
+
     <!-- Form -->
+    <!-- :errors = field-level errors dari server, format: [{ name: 'fieldName', message: '...' }] -->
     <UForm
       :schema="loginSchema"
       :state="loginState"
       @submit="handleLogin"
       class="w-full mt-4 space-y-4">
-      <UFormField label="Email" name="email" required>
+      <UFormField label="Email" name="email" :error="formErrors.find(e => e.name === 'email')?.message" required>
         <UInput
           v-model="loginState.email"
           size="lg"
@@ -62,7 +35,7 @@ const { loginSchema, loginState, loading, handleLogin } = useLogin()
           class="w-full" />
       </UFormField>
 
-      <UFormField label="Password" name="password" required>
+      <UFormField label="Password" name="password" :error="formErrors.find(e => e.name === 'password')?.message" required>
         <UInput
           v-model="loginState.password"
           size="lg"
@@ -85,7 +58,7 @@ const { loginSchema, loginState, loading, handleLogin } = useLogin()
         :disabled="loading"
         type="submit"
         size="xl"
-        class="w-full justify-center rounded-2xl bg-red-500 hover:bg-red-600 text-white">
+        class="w-full cursor-pointer justify-center rounded-2xl bg-red-500 hover:bg-red-600 text-white">
         Sign In to Kitchen
       </UButton>
     </UForm>

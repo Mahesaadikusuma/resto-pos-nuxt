@@ -1,3 +1,5 @@
+import type { User } from "next-auth"
+
 export interface ILogin {
   email: string
   password: string
@@ -28,3 +30,17 @@ export interface IUser {
         roles: Role[]
     }
 }
+
+
+export interface UserExtended extends User {
+  accessToken?: string;
+  role?: string;
+}
+
+export interface SessionExtended extends Session {
+  accessToken?: string;
+}
+
+export interface JWTExtended extends JWT {
+  user?: UserExtended;
+}  

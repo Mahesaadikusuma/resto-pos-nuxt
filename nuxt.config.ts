@@ -29,6 +29,7 @@ export default defineNuxtConfig({
     "@nuxt/icon",
     "@sidebase/nuxt-auth",
     "nuxt-charts",
+    "@vueuse/nuxt",
   ],
   css: ["~/assets/css/tailwind.css"],
   vite: { plugins: [tailwindcss()] },
