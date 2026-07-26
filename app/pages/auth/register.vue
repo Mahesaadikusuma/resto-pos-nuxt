@@ -3,6 +3,10 @@ import RegisterView from "~/components/view/Auth/register/registerView.vue";
 
 definePageMeta({
   layout: "auth",
+  auth: {
+    unauthenticatedOnly: true,
+    navigateAuthenticatedTo: '/'
+  }
 });
 
 useHead({

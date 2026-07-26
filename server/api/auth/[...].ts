@@ -9,7 +9,9 @@ export default NuxtAuthHandler({
     secret: useRuntimeConfig().NUXT_AUTH_SECRET,
     session: {
         strategy: "jwt",
-        maxAge: 60 * 60 * 24,
+        // maxAge: 60 * 60 * 24, // 1 hari
+        // 60 detik * 60 menit * 24 jam * 7 hari
+        maxAge: 60 * 60 * 24 * 7,
     },
     providers: [
         // @ts-expect-error You need to use .default here for it to work during SSR. May be fixed via Vite at some point

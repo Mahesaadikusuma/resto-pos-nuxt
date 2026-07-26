@@ -12,7 +12,7 @@ export const useLogin = () => {
   const toast = useToast()
   const router = useRouter()
   const loading = ref(false)
-  const { signIn } = useAuth()
+  const { signIn, getSession } = useAuth() 
   
   const callbacksUrl: string = (router.currentRoute.value.query.callbackUrl as string) || "/"
 
@@ -39,15 +39,12 @@ export const useLogin = () => {
       const result = await signIn("credentials", {
         email: payload.data.email,
         password: payload.data.password,
-        redirect: true,
-        callbackUrl: callbacksUrl,
+        redirect: false,
+        // callbackUrl: callbacksUrl,
       })
 
       if (result?.error) {
-        // Tampil di UI form (alert merah di atas form) + toast
         serverError.value = 'Email atau password salah. Silakan coba lagi.'
-
-        // Tampil highlight di field password juga
         formErrors.value = [
           { name: 'email', message: 'Email atau password salah. Silakan coba lagi' },
           { name: 'password', message: 'Email atau password salah. Silakan coba lagi' },
@@ -59,10 +56,12 @@ export const useLogin = () => {
 
       toast.add({ title: "Berhasil", description: "Login berhasil", color: "success" })
 
-      const { data: session } = useAuth()
-      const roles = session.value?.user?.roles?.map((role: any) => role.name) ?? []
+      const sessionData = await getSession()
+      const roles = (sessionData?.user as any)?.roles?.map((role: any) => role.name) ?? []
+      // Prioritaskan callbackUrl jika ada, atau arahkan berdasarkan role jika callbackUrl cuma "/"
+      const targetRoute = callbacksUrl !== "/" ? callbacksUrl : resolveRoleRoute(roles)
 
-      router.push(resolveRoleRoute(roles))
+      router.push(targetRoute)
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login gagal, coba lagi"
       serverError.value = message

@@ -31,6 +31,9 @@ export default defineNuxtConfig({
     "nuxt-charts",
     "@vueuse/nuxt",
   ],
+  auth: {
+    globalAppMiddleware: true
+  },
   css: ["~/assets/css/tailwind.css"],
   vite: { plugins: [tailwindcss()] },
 });

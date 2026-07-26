@@ -1,23 +1,38 @@
-import type { CategoryResponse } from "~/types/Category"
-
-
-
-
-export const categoryService = async () => {
-    const config = useRuntimeConfig()
-    const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    }
-    
-    const getCategories = async () => {
-        return await $fetch<CategoryResponse>(`${config.LARAVEL_BASE_URL}/category`, {
-            method: 'GET',
-            headers,
+const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+}
+export const categoryService = {
+    async createCategory(payload: IPayloadCategory, accessToken: string) {
+        const config = useRuntimeConfig()
+         return await $fetch<ISingleCategoryResponse>(`${config.public.laravelBaseUrl}/category`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                ...headers
+            },
+            body: payload,
         })
-    }
-
-    return {
-        getCategories,
+    },
+    async updateCategory(id: string, payload: IPayloadCategory, accessToken: string) {
+        const config = useRuntimeConfig()
+        return await $fetch<ISingleCategoryResponse>(`${config.public.laravelBaseUrl}/category/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                ...headers
+            },
+            body: payload,
+        })
+    },
+    async deleteCategory(id: string, accessToken: string) {
+        const config = useRuntimeConfig()
+        return await $fetch<ISingleCategoryResponse>(`${config.public.laravelBaseUrl}/category/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                ...headers
+            },
+        })
     }
 }

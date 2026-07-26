@@ -5,6 +5,10 @@ import LoginView from "~/components/view/Auth/login/LoginView.vue";
 
 definePageMeta({
   layout: "auth",
+  auth: {
+    unauthenticatedOnly: true,
+    navigateAuthenticatedTo: '/'
+  }
 });
 
 useHead({

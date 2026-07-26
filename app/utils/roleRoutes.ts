@@ -7,7 +7,7 @@ export const ROLE_ROUTES: Record<string, string> = {
   // tambah role baru di sini, tanpa ubah logic lain
 }
 
-export const DEFAULT_ROUTE = "/dashboard"
+export const DEFAULT_ROUTE = "/"
 
 /**
  * Ambil route tujuan berdasarkan prioritas role tertinggi.
@@ -19,5 +19,5 @@ export function resolveRoleRoute(
   priority: string[] = Object.keys(ROLE_ROUTES)
 ): string {
   const matchedRole = priority.find((role) => roles.includes(role))
-  return matchedRole ? ROLE_ROUTES[matchedRole] : DEFAULT_ROUTE
+  return (matchedRole ? ROLE_ROUTES[matchedRole] : DEFAULT_ROUTE) as string
 }

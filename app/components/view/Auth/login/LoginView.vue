@@ -27,7 +27,7 @@ const { loginSchema, loginState, loading, handleLogin, serverError, formErrors }
       :state="loginState"
       @submit="handleLogin"
       class="w-full mt-4 space-y-4">
-      <UFormField label="Email" name="email" :error="formErrors.find(e => e.name === 'email')?.message" required>
+      <UFormField label="Email" name="email" :error="formErrors.find(error => error.name === 'email')?.message" required>
         <UInput
           v-model="loginState.email"
           size="lg"
@@ -35,7 +35,7 @@ const { loginSchema, loginState, loading, handleLogin, serverError, formErrors }
           class="w-full" />
       </UFormField>
 
-      <UFormField label="Password" name="password" :error="formErrors.find(e => e.name === 'password')?.message" required>
+      <UFormField label="Password" name="password" :error="formErrors.find(error => error.name === 'password')?.message" required>
         <UInput
           v-model="loginState.password"
           size="lg"

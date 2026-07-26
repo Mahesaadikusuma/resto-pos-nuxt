@@ -68,7 +68,7 @@ const { isOpen, close } = useDashboardSidebar();
         <img
           src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
           alt="Admin User profile photo"
-          class="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+          class="w-12 h-12 rounded-full object-cover shrink-0" />
         <div class="min-w-0 flex-1">
           <p class="text-foreground text-base font-semibold truncate">
             Admin User
