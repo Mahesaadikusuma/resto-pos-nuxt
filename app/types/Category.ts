@@ -17,18 +17,9 @@ export interface ISingleCategoryResponse {
   data: ICategory 
 }
 
-export interface PaginationMeta {
-  current_page: number
-  per_page: number
-  total: number
-  last_page: number
-}
-
-
-
 export interface ICategoryResponse {
   success: boolean
   message: string
   data: ICategory[]
-  meta: PaginationMeta
+  meta?: IPaginationMeta
 }

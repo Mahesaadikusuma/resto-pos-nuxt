@@ -224,7 +224,7 @@ function resetFilters() {
           :loading="pending"
           :data="paginatedCategories" 
           :columns="columns"
-          class="flex-1 max-h-[500px]"
+          class="flex-1"
           loading-animation="carousel"
           loading-color="success">
           <template #action-cell="{ row }">

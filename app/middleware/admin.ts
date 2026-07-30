@@ -6,9 +6,10 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo("/auth/login")
   }
 
-  const roles = session.value?.user?.roles?.map((r: any) => r.name) ?? []
+  const user = session.value?.user as any;
+  const roles = user?.roles?.map((r: any) => r.name) ?? [];
 
   if (!roles.includes("admin")) {
-    return navigateTo("/dashboard") // atau halaman 403
+    return navigateTo("/dashboard");
   }
 })

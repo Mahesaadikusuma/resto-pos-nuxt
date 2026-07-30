@@ -3,6 +3,15 @@ const headers = {
     'Accept': 'application/json',
 }
 export const categoryService = {
+    async getCategories(limit: number = 10) {
+        const config = useRuntimeConfig()
+        return await $fetch<ICategoryResponse>(`${config.public.laravelBaseUrl}/category?limit=${limit}`, {
+            method: 'GET',
+            headers: {
+                ...headers
+            },
+        })
+    },
     async createCategory(payload: IPayloadCategory, accessToken: string) {
         const config = useRuntimeConfig()
          return await $fetch<ISingleCategoryResponse>(`${config.public.laravelBaseUrl}/category`, {

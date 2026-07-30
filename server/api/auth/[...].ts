@@ -70,6 +70,12 @@ export default NuxtAuthHandler({
             },
         })
     ],
+    pages: {
+        signIn: '/auth/login',
+        signOut: '/auth/logout',
+        // error: '/auth/login',
+        // verifyRequest: '/auth/login',
+    },
     callbacks: {
         async jwt({ token, user }: {token: JWTExtended; user: UserExtended | null}) {
             // if (user) {

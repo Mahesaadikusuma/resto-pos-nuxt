@@ -31,7 +31,7 @@ export const useNavigation = () => {
             {
                 label: 'Product',
                 icon: 'i-lucide-package',
-                to: '/dashboard/admin/product',
+                to: '/dashboard/admin/management/product',
             },
             {
                 label: 'Categories',

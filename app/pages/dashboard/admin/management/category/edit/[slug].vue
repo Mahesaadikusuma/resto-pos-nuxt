@@ -59,6 +59,7 @@ const { data: category, pending, error } = await useFetch<ISingleCategoryRespons
     }
   },
 )
+
 const categoryId = category.value?.data?.uuid as string;
 // Jika data tidak ditemukan (misal UUID asal-asalan)
 if (error.value) {
@@ -71,6 +72,7 @@ if (error.value) {
     
     navigateTo('/dashboard/admin/management/category')
 }
+
 async function onSubmit(event: FormSubmitEvent<CategorySchema>) {
     isLoading.value = true
     try {
