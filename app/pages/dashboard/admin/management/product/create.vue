@@ -6,7 +6,7 @@ definePageMeta({
 useHead({
     title: "Create Product - Dashboard",
 });
-const { searchCategory, categories, status, onOpen } = await useCategorySelect()
+const { searchCategory, categories, categoriesStatus, onOpen } = await useCategorySelect()
 
 const { 
     productState, 
@@ -87,7 +87,7 @@ const {
                         v-model="productState.category_uuid"
                         v-model:search-term="searchCategory"
                         :items="categories"
-                        :loading="status === 'pending'"
+                        :loading="categoriesStatus === 'pending'"
                         icon="i-lucide-list"
                         :search-input="{
                             placeholder: 'Search Category...',
@@ -104,10 +104,7 @@ const {
                 </UFormField>
 
                 <UFormField label="Image" name="image">
-                    <!-- <UFileUpload v-model="productState.image" accept="image/*" class="w-full min-h-48" /> -->
-                    <UFormField label="Image">
-                        <UFileUpload v-model="productState.image" accept="image/*" class="w-full min-h-48" />
-                    </UFormField>
+                    <UFileUpload v-model="productState.image" :preview="true" accept="image/*" class="w-full min-h-48" />
                 </UFormField>
 
 

@@ -1,7 +1,6 @@
 import { LazyViewModalDelete } from "#components"
 
-
-export const useDestroyCategory = () => {
+export function useDestroyProduct() {
     const toast = useToast()
     const overlay = useOverlay()
     const modal = overlay.create(LazyViewModalDelete)
@@ -11,10 +10,9 @@ export const useDestroyCategory = () => {
             itemId: id,
             itemName: name,
             title: 'Konfirmasi Hapus Data',
-            description: `Apakah Anda yakin ingin menghapus kategori "${name}"? Tindakan ini tidak dapat dibatalkan.`
+            description: `Apakah Anda yakin ingin menghapus Product "${name}"? Tindakan ini tidak dapat dibatalkan.`
         })
 
-        // Tunggu jawaban dari emit('close', true/false)
         const isConfirmed = await instance.result
         if (!isConfirmed) return
 
@@ -23,15 +21,13 @@ export const useDestroyCategory = () => {
             const session = await getSession()
             const accessToken = (session?.user as { accessToken?: string })?.accessToken;
 
-            const response = await categoryService.deleteCategory(id, accessToken || '')
+            const response = await ProductService.deleteProduct(id, accessToken || '')
 
             if (response && !response.success) {
-                // Lempar sebagai error agar masuk ke blok catch di bawah
                 throw new Error(response.message || 'Gagal menghapus data')
             }
 
-            // Refresh data HANYA jika benar-benar berhasil
-            await refreshNuxtData('categories')
+            await refreshNuxtData('products')
             toast.add({
                 title: 'Berhasil',
                 description: `${name} berhasil dihapus.`,
@@ -48,7 +44,7 @@ export const useDestroyCategory = () => {
             // includes adalah sebuah fungsi bawaan (metode) yang digunakan untuk mencari apakah sebuah teks (substring) terdapat di dalam teks lain yang lebih panjang
             // jadi includes jika ada kalimait Integrity constraint maka nilainya menjadi true dan jika gak ada kalimatnya maka jadi false
             if (errorMessage.includes('1451') || errorMessage.includes('Integrity constraint violation')) {
-                errorMessage = 'Kategori tidak bisa dihapus karena masih digunakan oleh produk. Silakan hapus atau pindahkan produk tersebut terlebih dahulu.';
+                errorMessage = 'Product tidak bisa dihapus karena masih digunakan oleh produk. Silakan hapus atau pindahkan produk tersebut terlebih dahulu.';
             }
             toast.add({
                 title: 'Gagal',
@@ -77,5 +73,4 @@ export const useDestroyCategory = () => {
     return {
         handleDelete
     }
-
 }

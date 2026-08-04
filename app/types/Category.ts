@@ -11,6 +11,11 @@ export interface IPayloadCategory {
   is_active: boolean
 }
 
+export interface CategoryOption {
+    label: string
+    value: string
+}
+
 export interface ISingleCategoryResponse {
   success: boolean
   message: string

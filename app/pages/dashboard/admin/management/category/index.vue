@@ -204,12 +204,20 @@ function resetFilters() {
       <div class="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <!-- filterSearchInput: nilai langsung dari user, debounced ke filterSearchCategory -->
         <UFormField label="Search Category">
-          <UInput v-model="filterSearchInput" trailing-icon="i-lucide-search" placeholder="Search By Category"
-            class="w-full" />
+          <UInput
+            v-model="filterSearchInput"
+            trailing-icon="i-lucide-search"
+            placeholder="Search By Category"
+            class="w-full"
+          />
         </UFormField>
         <UFormField label="Status">
-          <USelectMenu v-model="filterStatus" :items="['All Status', 'Active', 'Inactive']" placeholder="Filter Status"
-            class="w-full" />
+          <USelectMenu 
+            v-model="filterStatus" 
+            :items="['All Status', 'Active', 'Inactive']" 
+            placeholder="Filter Status"
+            class="w-full" 
+          />
         </UFormField>
       </div>
     </div>

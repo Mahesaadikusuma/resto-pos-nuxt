@@ -157,10 +157,10 @@ export async function useUpdateProduct() {
             formData.append('is_available', event.data.is_available ? '1' : '0')
 
             // Pastikan kita benar-benar hanya mengambil teks UUID-nya, bukan objectnya
-            const categoryId = event.data.category_uuid.value
-            // const categoryId = typeof event.data.category_uuid === 'object'
-            //     ? event.data.category_uuid.value
-            //     : event.data.category_uuid;
+            // const categoryId = event.data.category_uuid.value
+            const categoryId = typeof event.data.category_uuid === 'object'
+                ? event.data.category_uuid.value
+                : event.data.category_uuid;
 
             formData.append('category_uuid', categoryId)
 
