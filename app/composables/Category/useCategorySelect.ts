@@ -4,7 +4,7 @@ export async function useCategorySelect() {
     const searchCategoryDebounced = refDebounced(searchCategory, 500)
 
     const { data: categories, status: categoriesStatus, execute } = await useLazyFetch(`${config.public.laravelBaseUrl}/category?limit=5`, {
-        key: 'categories',
+        key: 'category-select',
         params: { search: searchCategoryDebounced },
         transform: (response: ICategoryResponse)=> {
             const categories = response?.data || []

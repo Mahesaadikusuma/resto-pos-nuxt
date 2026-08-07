@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import type { DropdownMenuItem, TableColumn } from '@nuxt/ui';
+// import auth from '~/middleware/auth';
+
 
 definePageMeta({
     layout: "dashboard",
+    name: 'management-admin-categories',
+    // middleware: [auth]
 })
 
 useHead({
@@ -13,14 +16,13 @@ const config = useRuntimeConfig()
 const toast = useToast()
 const route = useRoute()
 const router = useRouter()
+const { signOut } = useAuth()
 
-// ─── Pagination state — inisialisasi dari URL kalau ada ───────────
-const pagination = ref({
+const pagination = reactive({
   pageIndex: Number(route.query.page) || 1,
   pageSize: Number(route.query.per_page) || 10,
 })
 
-// ─── Filter State — inisialisasi dari URL kalau ada ────────────────
 const filterSearchInput = ref((route.query.search as string) || '')
 const filterStatus = ref<string | undefined>(
   route.query.is_active === '1' ? 'Active'
@@ -43,8 +45,8 @@ watchDebounced(
 // menumpuk history — user tekan "back" tidak perlu klik berkali-kali)
 function syncQueryToUrl() {
   const query: Record<string, string> = {
-    page: String(pagination.value.pageIndex),
-    per_page: String(pagination.value.pageSize),
+    page: String(pagination.pageIndex),
+    per_page: String(pagination.pageSize),
   }
 
   if (filterSearchCategory.value) {
@@ -68,13 +70,26 @@ const { data: categories, pending, status, error, refresh } = useLazyFetch<ICate
       'Accept': 'application/json',
     },
     query: computed(() => ({
-      page: pagination.value.pageIndex,
-      per_page: pagination.value.pageSize,
+      page: pagination.pageIndex,
+      per_page: pagination.pageSize,
       search: filterSearchCategory.value || undefined,
       is_active: filterStatus.value === 'Active' ? 1 : filterStatus.value === 'Inactive' ? 0 : undefined,
     })),
     watch: false,
     key: 'categories',
+    onResponseError({response}) {
+      if (response.status === 401) {
+        toast.add({
+          title: 'Unauthorized',
+          description: 'Anda tidak memiliki akses untuk memuat data kategori.',
+          color: 'error',
+          icon: 'i-lucide-circle-x',
+        })
+
+        
+        signOut({ callbackUrl: "/auth/login" })
+      }
+    }
   }
 )
 
@@ -96,7 +111,7 @@ const paginatedCategories = computed<ICategory[]>(() => {
 const totalItems = computed(() => categories.value?.meta?.total ?? 0)
 
 // Perubahan halaman → fetch + update URL
-watch(() => pagination.value.pageIndex, () => {
+watch(() => pagination.pageIndex, () => {
   refresh()
   syncQueryToUrl()
 })
@@ -104,72 +119,44 @@ watch(() => pagination.value.pageIndex, () => {
 // Perubahan filter → reset halaman (yang otomatis trigger watcher di atas),
 // atau kalau sudah di halaman 1, refresh + sync manual
 watch([filterSearchCategory, filterStatus], () => {
-  if (pagination.value.pageIndex === 1) {
+  if (pagination.pageIndex === 1) {
     refresh()
     syncQueryToUrl()
   } else {
-    pagination.value.pageIndex = 1
+    pagination.pageIndex = 1
   }
 })
 
-const columns: TableColumn<ICategory>[] = [
-  {
-    accessorKey: 'uuid',
-    header: 'No',
-    cell: ({ row }) => (pagination.value.pageIndex - 1) * pagination.value.pageSize + row.index + 1,
-  },
-  {
-    accessorKey: 'name',
-    header: 'Name',
-  },
-  {
-    accessorKey: 'is_active',
-    header: 'Is Active',
-    cell: ({ row }) => {
-      const isActive = row.original.is_active
-      return h('span', { class: `font-medium ${
-        isActive
-          ? 'text-emerald-500 dark:text-emerald-400'
-          : 'text-amber-500 dark:text-amber-400'
-      }` }, isActive ? 'Active' : 'Inactive')
-    },
-  },
-  {
-    accessorKey: 'uuid',
-    header: 'Action',
-    id: 'action',
-  },
-]
-
-function getDropdownActions(category: ICategory): DropdownMenuItem[][] {
-  return [
-    [
-      {
-        label: 'Edit',
-        icon: 'i-lucide-edit',
-        to: `/dashboard/admin/management/category/edit/${category.uuid}`,
-      },
-      {
-        label: 'Delete',
-        icon: 'i-lucide-trash',
-        color: 'error',
-        onSelect: () => handleDelete(category.uuid, category.name)
-      },
-    ],
-  ]
-}
-
-const { handleDelete } = useDestroyCategory()
+const { columns, getDropdownActions } = useCategoryTable(pagination)
 
 function resetFilters() {
   filterSearchInput.value = ''
   filterSearchCategory.value = ''
   filterStatus.value = undefined
-  if (pagination.value.pageIndex !== 1) {
-    pagination.value.pageIndex = 1  // ini otomatis trigger refresh() + syncQueryToUrl() lewat watcher pageIndex
+  if (pagination.pageIndex !== 1) {
+    pagination.pageIndex = 1  // ini otomatis trigger refresh() + syncQueryToUrl() lewat watcher pageIndex
   } else {
     refresh()
     syncQueryToUrl()
+  }
+}
+
+const refreshCategories = async () => {
+  try {
+    await refresh()
+    toast.add({
+      title: "Data Diperbarui",
+      description: "Data Category berhasil dimuat ulang.",
+      color: "success",
+      icon: "i-lucide-check-circle",
+    });
+  } catch (error: unknown) {
+    const err = error as { data?: { message?: string } };
+    toast.add({
+      title: "Gagal",
+      description: err?.data?.message || "Gagal merefresh data",
+      color: "error",
+    });
   }
 }
 </script>
@@ -223,9 +210,22 @@ function resetFilters() {
     </div>
 
     <div class="bg-muted dark:bg-gray-800/50 rounded-md p-5 mb-6">
-      <h3 class="text-foreground dark:text-gray-100 text-lg font-bold mb-4">
-        All Categories
-      </h3>
+      <div class="flex justify-between items-center gap-5">
+        <h3 class="text-foreground dark:text-gray-100 text-lg font-bold mb-4">
+          All Categories
+        </h3>
+
+        <UButton
+          icon="i-lucide-rotate-ccw"
+          size="sm"
+          variant="ghost"
+          color="neutral"
+          @click="refreshCategories"
+        >
+          Refresh Categories
+        </UButton>
+      </div>
+      
       <div>
         <UTable  
           sticky 

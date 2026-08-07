@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
     layout: "dashboard",
+    name: "management-admin-product-create"
 })
 
 useHead({
@@ -28,7 +29,7 @@ const {
                         icon="i-lucide-arrow-left"
                         variant="ghost"
                         color="neutral"
-                        to="/dashboard/admin/management/product"
+                        :to="{name: 'management-admin-products'}"
                     >
                         Back to Products
                     </UButton>

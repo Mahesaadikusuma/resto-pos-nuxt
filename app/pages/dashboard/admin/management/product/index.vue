@@ -2,6 +2,8 @@
 <script setup lang="ts">
 definePageMeta({
   layout: "dashboard",
+  auth: true,
+  name: "management-admin-products"
 });
 
 useHead({
@@ -214,7 +216,7 @@ const refreshProductData = async () => {
         <UButton
           color="primary"
           variant="solid"
-          to="/dashboard/admin/management/product/create"
+          :to="{name: 'management-admin-product-create'}"
         >
           Add New Product
         </UButton>

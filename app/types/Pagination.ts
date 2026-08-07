@@ -4,3 +4,8 @@ export interface IPaginationMeta {
   total: number
   last_page: number
 }
+
+export interface PaginationState {
+  pageIndex: number
+  pageSize: number
+}

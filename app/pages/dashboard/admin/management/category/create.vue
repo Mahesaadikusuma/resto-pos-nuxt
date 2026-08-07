@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
     layout: "dashboard",
+    name: 'management-admin-category-create',
 })
 
 useHead({
@@ -22,8 +23,11 @@ const {
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 mt-5 md:mb-8">
             <div class="">
                 <div class="flex items-center gap-2 mb-5">
-                    <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral"
-                        to="/dashboard/admin/management/category">
+                    <UButton 
+                        icon="i-lucide-arrow-left" 
+                        variant="ghost" 
+                        color="neutral"
+                        :to="{ name: 'management-admin-categories' }">
                         Back to Categories
                     </UButton>
                 </div>

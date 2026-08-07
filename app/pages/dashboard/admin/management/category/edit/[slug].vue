@@ -4,6 +4,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 
 definePageMeta({
     layout: "dashboard",
+    name: "management-admin-category-edit"
 })
 
 useHead({
@@ -48,9 +49,9 @@ const { data: category, pending, error } = await useFetch<ISingleCategoryRespons
     onResponseError({ response }) {
         if (import.meta.client) {
             // Ambil pesan dari Laravel atau pakai pesan default
-            const msg = response._data?.message || 'Data kategori tidak ditemukan.'
+            const msg = response?._data?.message || 'Data kategori tidak ditemukan.'
             toast.add({
-                title: 'Gagal memuat data',
+                title: 'Gagal memuat data server',
                 description: msg,
                 color: 'error',
                 icon: 'i-lucide-circle-x',
@@ -70,7 +71,7 @@ if (error.value) {
       icon: 'i-lucide-circle-x',
     })
     
-    navigateTo('/dashboard/admin/management/category')
+    await navigateTo('/dashboard/admin/management/category')
 }
 
 async function onSubmit(event: FormSubmitEvent<CategorySchema>) {

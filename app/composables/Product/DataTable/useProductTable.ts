@@ -1,10 +1,6 @@
 // composables/Product/useProductTable.ts
 import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 
-interface PaginationState {
-  pageIndex: number
-  pageSize: number
-}
 
 export function useProductTable(pagination: PaginationState) {
   const { handleDelete } = useDestroyProduct()
@@ -114,7 +110,11 @@ export function useProductTable(pagination: PaginationState) {
         {
           label: 'Edit',
           icon: 'i-lucide-edit',
-          to: `/dashboard/admin/management/product/edit/${product.slug}`,
+          // to: `/dashboard/admin/management/product/edit/${product.slug}`,
+          to: { 
+            name: "management-admin-product-edit", 
+            params: { slug: product.slug }
+          }
         },
         {
           label: 'Delete',

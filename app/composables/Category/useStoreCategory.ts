@@ -4,7 +4,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 
 // Skema validasi dipisah di luar fungsi agar tidak dibuat ulang setiap kali dipanggil
 export const categorySchema = z.strictObject({
-    name: z.string().min(3, "Name is required"),
+    name: z.string().min(3, "Minimal 3 karakter").max(100, "Maximal 100 karakter"),
     is_active: z.boolean(),
 })
 
@@ -50,8 +50,16 @@ export const useStoreCategory = () => {
 
             // Arahkan ke halaman list setelah berhasil
             await navigateTo('/dashboard/admin/management/category')
-        } catch (error) {
-            const fetchError = error as { data?: { message?: string; errors?: Record<string, string[]> } }
+        } catch (error: unknown) {
+            const fetchError = error as {
+                data?: { message?: string; errors?: Record<string, string[]> }
+                message?: string
+                response?: { status?: number }
+            }
+            let errorMessage = fetchError?.data?.message || fetchError?.message || 'Gagal menghapus data.';
+            if (errorMessage.includes('1451') || errorMessage.includes('Integrity constraint violation')) {
+                errorMessage = 'Kategori tidak bisa dihapus karena masih digunakan oleh produk. Silakan hapus atau pindahkan produk tersebut terlebih dahulu.';
+            }
 
             // Menangkap error validasi spesifik dari Laravel
             if (fetchError?.data?.errors) {
@@ -60,6 +68,20 @@ export const useStoreCategory = () => {
                     name: key,
                     message: errors[key]?.[0] || 'Terjadi kesalahan pada field ini'
                 }))
+            }
+
+            const statusCode = fetchError?.response?.status;
+            const isTokenExpired = statusCode === 401 || errorMessage.toLowerCase().includes('kadaluarsa') || errorMessage.toLowerCase().includes('token tidak valid');
+
+            if (isTokenExpired) {
+                const { signOut } = useAuth()
+
+                toast.add({
+                    title: 'Sesi Habis',
+                    description: 'Sesi Anda telah berakhir. Silakan login kembali.',
+                    color: 'warning'
+                })
+                await signOut({ callbackUrl: '/auth/login' })
             }
 
             toast.add({

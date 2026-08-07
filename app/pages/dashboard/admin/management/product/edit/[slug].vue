@@ -1,8 +1,8 @@
 <script setup lang="ts">
-
 definePageMeta({
     layout: "dashboard",
     auth: true,
+    name: "management-admin-product-edit"
 })
 
 useHead({
@@ -12,7 +12,7 @@ useHead({
 const route = useRoute()
 const productSlug = route.params.slug as string
 
-const { searchCategory, categories, status, onOpen } = await useCategorySelect()
+const { searchCategory, categories, categoriesStatus, onOpen } = await useCategorySelect()
 
 const {
     displayPrice,
@@ -36,7 +36,7 @@ const {
                         icon="i-lucide-arrow-left"
                         variant="ghost"
                         color="neutral"
-                        to="/dashboard/admin/management/product"
+                        :to="{name: 'management-admin-products'}"
                     >
                         Back to Products
                     </UButton>
@@ -92,7 +92,7 @@ const {
                         v-model="productState.category_uuid"
                         v-model:search-term="searchCategory"
                         :items="categories"
-                        :loading="status === 'pending'"
+                        :loading="categoriesStatus === 'pending'"
                         icon="i-lucide-list"
                         :search-input="{
                             placeholder: 'Search Category...',
