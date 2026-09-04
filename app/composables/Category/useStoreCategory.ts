@@ -3,12 +3,12 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 // Skema validasi dipisah di luar fungsi agar tidak dibuat ulang setiap kali dipanggil
-export const categorySchema = z.strictObject({
+const categorySchema = z.strictObject({
     name: z.string().min(3, "Minimal 3 karakter").max(100, "Maximal 100 karakter"),
     is_active: z.boolean(),
 })
 
-export type CategorySchema = z.output<typeof categorySchema>
+type CategorySchema = z.output<typeof categorySchema>
 
 export const useStoreCategory = () => {
     const toast = useToast()

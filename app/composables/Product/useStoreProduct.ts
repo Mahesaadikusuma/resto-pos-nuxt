@@ -35,7 +35,7 @@ export const productSchema = z.strictObject({
     is_available: z.boolean(),
 })
 
-export type ProductSchema = z.output<typeof productSchema>
+type ProductSchema = z.output<typeof productSchema>
 
 // PERBAIKAN: override category_uuid juga, bukan cuma image
 export type ProductFormState = Omit<ProductSchema, 'image' | 'category_uuid' | 'price' | 'stock'> & {

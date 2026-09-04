@@ -1,24 +1,19 @@
 <script setup lang="ts">
-import type { IUser, IUsers } from '~/types/Auth';
-
-
-
 definePageMeta({
   layout: "dashboard",
   middleware: ["auth"],
-  name: "setting-admin-users",
+  name: "setting-admin-permission",
 });
 
 useHead({
-  title: "Users Management - Dashboard",
+  title: "Permission Management",
 });
 
 const config = useRuntimeConfig();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-
-
+const { accessToken, signOut } = await useAuthToken();
 
 const pagination = reactive({
   pageIndex: Number(route.query.page) || 1,
@@ -28,13 +23,12 @@ const pagination = reactive({
 const filters = reactive({
   search: (route.query.search as string) || "",
 });
-
-const filterSearchUser = ref(filters.search);
+const filterSearchPermission = ref(filters.search);
 
 watchDebounced(
   () => filters.search,
   (val) => {
-    filterSearchUser.value = val;
+    filterSearchPermission.value = val;
   },
   { debounce: 500, maxWait: 1000 },
 );
@@ -44,75 +38,65 @@ function syncQueryToUrl() {
     page: String(pagination.pageIndex),
     per_page: String(pagination.pageSize),
   };
-
-  if (filterSearchUser.value) {
-    query.search = filterSearchUser.value;
-  }
-
+  if (filterSearchPermission.value) query.search = filterSearchPermission.value;
   router.replace({ query });
 }
-const { accessToken, signOut } = await useAuthToken()
+
 const {
-  data: users,
+  data: permissions,
   pending,
   status,
   error,
   refresh,
-} = await useLazyFetch<IUsers>(`${config.public.laravelBaseUrl}/users`, {
-  headers: {
-    Accept: "application/json",
-    Authorization: `Bearer ${accessToken}`,
+} = await useLazyFetch<IPermissionResponse>(
+  `${config.public.laravelBaseUrl}/permission`,
+  {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    query: computed(() => ({
+      page: pagination.pageIndex,
+      per_page: pagination.pageSize,
+      search: filterSearchPermission.value || undefined,
+    })),
+    watch: false,
+    key: "permissions",
+    onResponseError({ response }) {
+      if (response.status === 401) {
+        toast.add({
+          title: "Unauthorized",
+          description: "Sesi Anda telah berakhir, silakan login kembali.",
+          color: "error",
+          icon: "i-lucide-circle-x",
+        });
+
+        signOut({ callbackUrl: "/auth/login" });
+        return;
+      }
+    },
   },
-  query: computed(() => ({
-    page: pagination.pageIndex,
-    per_page: pagination.pageSize,
-    search: filterSearchUser.value || undefined,
-  })),
-  watch: false,
-  key: "users",
-  onResponseError({ response }) {
-    // PERBAIKAN 1: pesan sebelumnya salah ("kategori"), harusnya "users" — sisa copy-paste
-    if (response.status === 401) {
-      toast.add({
-        title: "Unauthorized",
-        description: "Sesi Anda telah berakhir, silakan login kembali.",
-        color: "error",
-        icon: "i-lucide-circle-x",
-      });
-
-      signOut({ callbackUrl: "/auth/login" });
-      return;
-    }
-
-    // PERBAIKAN 2: tangani error lain juga (403, 500, dst), jangan cuma diam
-    toast.add({
-      title: "Gagal memuat data",
-      description: response._data?.message || "Terjadi kesalahan saat memuat data users.",
-      color: "error",
-      icon: "i-lucide-circle-x",
-    });
-  },
-
-});
-
+);
 
 if (error.value) {
   toast.add({
-    title: 'Gagal memuat data',
-    description: error.value.data?.message || error.value.message || 'Gagal memuat data users, coba lagi.',
-    color: 'error',
-    icon: 'i-lucide-circle-x',
-  })
+    title: "Gagal memuat data",
+    description:
+      error.value.data?.message ||
+      error.value.message ||
+      "Gagal memuat data produk, coba lagi.",
+    color: "error",
+    icon: "i-lucide-circle-x",
+  });
 
-  await navigateTo('/dashboard/admin/setting/user')
+  await navigateTo("/dashboard/admin/management/product");
 }
 
-const paginatedUsers = computed<IUser[]>(() => {
-  return users.value?.data || [];
+const paginatedPermissions = computed<IPermission[]>(() => {
+  return permissions.value?.data || [];
 });
-const totalItems = computed(() => users.value?.meta?.total ?? 0);
+const totalItems = computed(() => permissions.value?.meta?.total || 0);
 
-// Perubahan halaman → fetch + update URL
 watch(
   () => pagination.pageIndex,
   () => {
@@ -121,43 +105,27 @@ watch(
   },
 );
 
-// Perubahan filter → reset halaman (yang otomatis trigger watcher di atas),
-// atau kalau sudah di halaman 1, refresh + sync manual
+watch([() => filterSearchPermission.value], () => {
+  if (pagination.pageIndex === 1) {
+    refresh();
+    syncQueryToUrl();
+  } else {
+    pagination.pageIndex = 1;
+  }
+});
 
-watch(
-  [
-    // filterSearchUser, // ini ref (bisa langsung dipantau)
-    () => filterSearchUser.value, // ini ref pakai getter
-  ],
-  () => {
-    if (pagination.pageIndex === 1) {
-      refresh();
-      syncQueryToUrl();
-    } else {
-      // Jika tidak di halaman 1, paksa ke halaman 1.
-      // Otomatis akan memicu watch(pagination.pageIndex) yang ada di kodemu sebelumnya.
-      pagination.pageIndex = 1;
-    }
-  },
-);
-
-const { columns, getDropdownActions } = useUserTable(pagination)
+const { columns, getDropdownActions } = await usePermissionTable(pagination);
 
 function resetFilters() {
-    filters.search = "";
-    filterSearchUser.value = "";
-    if (pagination.pageIndex !== 1) {
-      pagination.pageIndex = 1;
-    }
+  filters.search = "";
 }
 
-
-const refreshUserData = async () => {
+const refreshPermissionData = async () => {
   try {
     await refresh();
     toast.add({
       title: "Data Diperbarui",
-      description: "Data user berhasil dimuat ulang.",
+      description: "Data permission berhasil dimuat ulang.",
       color: "success",
       icon: "i-lucide-check-circle",
     });
@@ -179,12 +147,18 @@ const refreshUserData = async () => {
     >
       <div>
         <h1 class="text-foreground text-2xl md:text-3xl font-bold mb-1">
-          Users Management
+          Permission Management
         </h1>
       </div>
-      <div class="flex items-center gap-2 md:gap-3 ml-auto md:ml-0">
-        <UButton icon="i-lucide-download" color="neutral" variant="soft">
-          Export Excel Report
+      <div class="flex items-center">
+        <UButton
+          icon="i-lucide-plus"
+          size="sm"
+          variant="solid"
+          color="success"
+          :to="{name: 'setting-admin-permission-create'}"
+        >
+          Buat Permission
         </UButton>
       </div>
     </div>
@@ -192,7 +166,7 @@ const refreshUserData = async () => {
     <div class="bg-muted dark:bg-gray-800/50 rounded-md pt-5 px-3 pb-3 mb-8">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-foreground dark:text-gray-100 text-lg font-bold">
-          Filter User
+          Filter Permission
         </h3>
 
         <UButton
@@ -209,14 +183,14 @@ const refreshUserData = async () => {
         class="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
       >
         <!-- filterSearchInput: nilai langsung dari user, debounced ke filterSearchCategory -->
-        <!-- <UFormField label="Search Product">
+        <UFormField label="Search Permission">
           <UInput
             v-model="filters.search"
             trailing-icon="i-lucide-search"
-            placeholder="Search By Product"
+            placeholder="Search By name"
             class="w-full"
           />
-        </UFormField> -->
+        </UFormField>
       </div>
     </div>
 
@@ -230,16 +204,16 @@ const refreshUserData = async () => {
           size="sm"
           variant="ghost"
           color="neutral"
-          @click="refreshUserData"
+          @click="refreshPermissionData"
         >
-          Refresh Users
+          Refresh Permission
         </UButton>
       </div>
       <div>
         <UTable
           sticky
           :loading="pending"
-          :data="paginatedUsers"
+          :data="paginatedPermissions"
           :columns="columns"
           class="flex-1 max-h-125"
           loading-animation="carousel"

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = defineProps({
     itemId: {
-        type: String,
+        type: [String, Number],
         required: true,
     },
     itemName: {

@@ -70,7 +70,12 @@ export const useNavigation = () => {
                     {
                         label: "Roles",
                         icon: "i-lucide-folder",
-                        to: '/dashboard/admin/role',
+                        to: '/dashboard/admin/setting/role',
+                    },
+                    {
+                        label: "Permission",
+                        icon: "i-lucide-folder",
+                        to: '/dashboard/admin/setting/permission',
                     },
                 ],
             },

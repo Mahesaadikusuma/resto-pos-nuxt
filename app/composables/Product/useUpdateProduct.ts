@@ -1,7 +1,7 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
-export const productSchema = z.strictObject({
+const productSchema = z.strictObject({
     name: z.string().min(3, "Name is required"),
     price: z.coerce.number().min(0, "Price is required"),
     stock: z.coerce.number().min(0, "Stock is required"),
@@ -15,13 +15,13 @@ export const productSchema = z.strictObject({
     is_available: z.boolean(),
 })
 // Tipe hasil VALIDASI (dipakai saat submit, semua field wajib lengkap)
-export type ProductSchema = z.output<typeof productSchema>
+type ProductSchema = z.output<typeof productSchema>
 
-export type CategoryOption = { label: string; value: string }
+type CategoryOption = { label: string; value: string }
 
 // Tipe STATE form (dipakai untuk v-model, boleh ada field belum terisi)
 // Override category_uuid supaya boleh undefined di awal, meski di ProductSchema wajib ada
-export type ProductFormState = Omit<ProductSchema, 'category_uuid'> & {
+type ProductFormState = Omit<ProductSchema, 'category_uuid'> & {
     category_uuid: CategoryOption | undefined
 }
 
