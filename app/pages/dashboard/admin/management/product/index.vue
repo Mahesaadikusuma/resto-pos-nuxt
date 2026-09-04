@@ -64,11 +64,6 @@ function syncQueryToUrl() {
     query.is_available = '0'
   }
 
-  // ini di urlnya jadi category uuid
-  // if (filters.category?.value) {
-  //   query.category = filters.category.value
-  // }
-
   // ini ketika pakai label atau name category
   if (filters.category?.label) {
     query.category = filters.category.label

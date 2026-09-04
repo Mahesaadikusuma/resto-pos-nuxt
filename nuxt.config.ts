@@ -44,9 +44,6 @@ export default defineNuxtConfig({
 
     storesDirs: ['app/stores/**'],
   },
-  auth: {
-    globalAppMiddleware: true
-  },
   css: ["~/assets/css/tailwind.css"],
   vite: { plugins: [tailwindcss()] },
 });

@@ -1,6 +1,6 @@
 // services/authService.ts
 
-import type { ILogin, ILoginResponse, IUser } from "~/types/Auth"
+import type { ILogin, ILoginResponse, IUserResponse } from "~/types/Auth"
 
 export const authService = {
   async login(payload: ILogin) {
@@ -20,7 +20,7 @@ export const authService = {
   async getProfile(accessToken: string) {
     const config = useRuntimeConfig()
     
-    return await $fetch<IUser>(`${config.public.laravelBaseUrl}/me`, {
+    return await $fetch<IUserResponse>(`${config.public.laravelBaseUrl}/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

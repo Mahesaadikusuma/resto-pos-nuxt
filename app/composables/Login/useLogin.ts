@@ -11,10 +11,11 @@ type LoginSchema = z.output<typeof loginSchema>
 export const useLogin = () => {
   const toast = useToast()
   const router = useRouter()
+  const route = useRoute()
   const loading = ref(false)
   const { signIn, getSession } = useAuth() 
   
-  const callbacksUrl: string = (router.currentRoute.value.query.callbackUrl as string) || "/"
+  const callbacksUrl: string = (route.query.callbackUrl as string) || "/"
 
   // Error umum dari server (misal: "Email atau password salah")
   const serverError = ref<string | null>(null)

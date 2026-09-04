@@ -2,15 +2,14 @@ import type { User } from "next-auth";
 
 // middleware/auth.ts
 export default defineNuxtRouteMiddleware((to) => {
-  const { status, data: session } = useAuth()
-
+  const { status, data } = useAuth()
   // 1. Tendang ke login jika belum autentikasi
   if (status.value !== "authenticated") {
     return navigateTo("/auth/login")
   }
 
 
-  const user = session.value?.user as User;
+  const user = data.value?.user as User;
   const roles = user?.roles?.map((r: any) => r.name) ?? [];
 
   // 2. Tentukan halaman utama yang SEHARUSNYA untuk user ini (berdasarkan prioritas)

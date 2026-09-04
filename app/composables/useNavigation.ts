@@ -65,7 +65,7 @@ export const useNavigation = () => {
                     {
                         label: "User",
                         icon: "i-lucide-folder",
-                        to: '/dashboard/admin/user',
+                        to: '/dashboard/admin/setting/user',
                     },
                     {
                         label: "Roles",

@@ -64,7 +64,7 @@ const SIDEBAR_ADMIN: SidebarSectionType[] = [
         type: "item",
         label: "Users",
         icon: "mdi:account-group",
-        route: "/users",
+        route: "/dashboard/admin/setting/user",
       },
     ],
   },

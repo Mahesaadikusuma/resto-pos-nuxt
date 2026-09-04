@@ -5,6 +5,7 @@ export const useDestroyCategory = () => {
     const toast = useToast()
     const overlay = useOverlay()
     const modal = overlay.create(LazyViewModalDelete)
+    const { signOut } = useAuth()
 
     async function handleDelete(id: string, name: string) {
         const instance = modal.open({
@@ -60,7 +61,7 @@ export const useDestroyCategory = () => {
             const isTokenExpired = statusCode === 401 || errorMessage.toLowerCase().includes('kadaluarsa') || errorMessage.toLowerCase().includes('token tidak valid');
 
             if (isTokenExpired) {
-                const { signOut } = useAuth()
+                
 
                 toast.add({
                     title: 'Sesi Habis',

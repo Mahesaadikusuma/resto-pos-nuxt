@@ -4,6 +4,7 @@ import { DashboardStatsCard } from '~/components/view/dashboard';
 
 definePageMeta({
   layout: "dashboard",
+  middleware: ["auth"],
 });
 
 useHead({

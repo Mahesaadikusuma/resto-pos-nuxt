@@ -19,12 +19,7 @@ export interface ILoginResponse {
     }
 }
 
-export interface Role {
-    id: number
-    name: string
-}
-
-export interface IUser {
+export interface IUserResponse {
     success: boolean
     message: string
     data: {
@@ -33,6 +28,20 @@ export interface IUser {
         email: string
         roles: Role[]
     }
+}
+export interface IUser {
+    id: number
+    name: string
+    email: string
+    roles: Role[]
+    permission: Permission[]
+}
+
+export interface IUsers {
+  success: boolean
+  message: string
+  data: IUser[]
+  meta?: IPaginationMeta
 }
 
 

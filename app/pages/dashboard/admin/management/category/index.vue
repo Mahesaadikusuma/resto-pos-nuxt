@@ -62,7 +62,7 @@ function syncQueryToUrl() {
   router.replace({ query })
 }
 
-// ─── Fetch data ke Laravel ───────────────────
+// Fetch data ke Laravel
 const { data: categories, pending, status, error, refresh } = useLazyFetch<ICategoryResponse>(
   `${config.public.laravelBaseUrl}/category`,
   {
